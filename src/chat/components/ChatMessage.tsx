@@ -1,4 +1,3 @@
-// src/components/ChatMessage.tsx
 import React from 'react'
 
 type ChatMessageProps = {
@@ -7,8 +6,8 @@ type ChatMessageProps = {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
-    <div>
-      <p>{message}</p>
+    <div className="card bg-base-200 shadow-lg mb-4 p-4">
+      <p className="text-lg">{message}</p>
     </div>
   )
 }

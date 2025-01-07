@@ -2,42 +2,35 @@ import React, { useState } from 'react'
 import ChatMessage from './ChatMessage'
 
 const ChatApp: React.FC = () => {
-  // State for messages, new message input, and response from the backend
   const [messages, setMessages] = useState<string[]>([])
   const [newMessage, setNewMessage] = useState<string>('')
-  const [response, setResponse] = useState<string | null>(null) // State to store the backend response
+  const [response, setResponse] = useState<string | null>(null)
 
-  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value)
   }
 
-  // Handle send button click
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
-      // Update the frontend with the new message
       const updatedMessages = [...messages, newMessage]
       setMessages(updatedMessages)
       setNewMessage('')
 
-      // Send the message to the backend
       try {
         const res = await fetch('http://localhost:8000/chat/', {
-          // Replace with your backend URL
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            messages: updatedMessages // Send all the messages so far
+            messages: updatedMessages
           })
         })
 
         const data = await res.json()
 
-        // Handle backend response and display the response from Ollama
         if (data.status === 'success') {
-          setResponse(data.ollama_response) // Display the model's response
+          setResponse(data.ollama_response)
         } else {
           console.error('Error in backend response:', data.error)
         }
@@ -48,25 +41,34 @@ const ChatApp: React.FC = () => {
   }
 
   return (
-    <div>
-      <div>
+    <div className="min-h-screen flex flex-col justify-between bg-base-100 p-4">
+      <div className="flex flex-col space-y-4 overflow-auto max-h-[500px]">
         {/* Display messages */}
         {messages.map((message, index) => (
           <ChatMessage key={index} message={message} />
         ))}
 
-        {/* Display the response from the backend (Ollama's response) */}
-        {response && <div className="response">{response}</div>}
+        {/* Display the response from the backend */}
+        {response && (
+          <div className="card bg-base-300 shadow-lg p-4">
+            <p className="text-lg text-gray-700">{response}</p>
+          </div>
+        )}
       </div>
 
-      {/* Input field and send button */}
-      <input
-        type="text"
-        value={newMessage}
-        onChange={handleInputChange}
-        placeholder="Type a message"
-      />
-      <button onClick={handleSendMessage}>Send</button>
+      {/* Input and Send Button */}
+      <div className="mt-4 flex space-x-4">
+        <input
+          type="text"
+          value={newMessage}
+          onChange={handleInputChange}
+          placeholder="Type a message"
+          className="input input-bordered w-full"
+        />
+        <button onClick={handleSendMessage} className="btn btn-primary px-6">
+          Send
+        </button>
+      </div>
     </div>
   )
 }
