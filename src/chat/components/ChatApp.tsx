@@ -30,7 +30,8 @@ const ChatApp: React.FC = () => {
         const data = await res.json()
 
         if (data.status === 'success') {
-          setResponse(data.ollama_response)
+          console.log(data.ai_response)
+          setResponse(data.ai_response)
         } else {
           console.error('Error in backend response:', data.error)
         }
@@ -51,7 +52,8 @@ const ChatApp: React.FC = () => {
         {/* Display the response from the backend */}
         {response && (
           <div className="card bg-base-300 shadow-lg p-4">
-            <p className="text-lg text-gray-700">{response}</p>
+            {/* Pass the AI response to ChatMessage */}
+            <ChatMessage message={response} />
           </div>
         )}
       </div>
