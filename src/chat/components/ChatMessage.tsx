@@ -4,8 +4,8 @@ import { CopyToClipboard } from 'react-copy-to-clipboard'
 import 'highlight.js/styles/monokai.css' // Change the theme here
 import hljs from 'highlight.js'
 
-// Custom Code Block Component with Syntax Highlighting and Copy Button
-const CodeBlock: React.FC<{ language: string; children: string }> = ({
+// Inline CodeBlock definition
+export const CodeBlock: React.FC<{ language: string; children: string }> = ({
   language,
   children
 }) => {
@@ -39,9 +39,17 @@ const CodeBlock: React.FC<{ language: string; children: string }> = ({
 
 type ChatMessageProps = {
   message: string
+  excludeCodeBlocks?: boolean // Control whether to exclude code blocks
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  excludeCodeBlocks = false
+}) => {
+  const filteredMessage = excludeCodeBlocks
+    ? message.replace(/```[\s\S]*?```/g, '') // Remove code blocks if flag is set
+    : message
+
   return (
     <div className="card bg-base-200 shadow-lg mb-4 p-4 text-left">
       <Markdown
@@ -49,14 +57,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           overrides: {
             code: {
               component: ({ className, children }) => {
-                const language = className?.replace('language-', '') || ''
+                const language =
+                  className?.replace('language-', '') || 'plaintext'
                 return <CodeBlock language={language}>{children}</CodeBlock>
               }
             }
           }
         }}
       >
-        {message}
+        {filteredMessage}
       </Markdown>
     </div>
   )

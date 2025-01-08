@@ -5,9 +5,7 @@ function App() {
   
 
   return (
-    <div>
-      <h1>Chat Application</h1>
-       
+    <div> 
       <ChatApp />
     </div>
   )
