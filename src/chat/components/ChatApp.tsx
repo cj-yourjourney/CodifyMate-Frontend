@@ -9,6 +9,8 @@ const ChatApp: React.FC = () => {
   const [codeHistory, setCodeHistory] = useState<
     { language: string; code: string }[]
   >([])
+  const [filePath, setFilePath] = useState<string>('')
+  const [showInput, setShowInput] = useState<boolean>(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value)
@@ -36,7 +38,6 @@ const ChatApp: React.FC = () => {
         if (data.status === 'success') {
           setResponse(data.ai_response)
 
-          // Extract code content from response using regex
           const codeMatch = data.ai_response.match(/```(\w*)\n([\s\S]*?)```/)
           if (codeMatch) {
             const [, language, code] = codeMatch
@@ -54,20 +55,43 @@ const ChatApp: React.FC = () => {
     }
   }
 
+  const handleGenerateFile = () => {
+    setShowInput(true) // Show input field to enter file path
+  }
+
+  const handleSaveFile = async (code: string, language: string) => {
+    if (filePath) {
+      const response = await fetch('http://localhost:8000/chat/save_file/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          file_path: filePath,
+          code: code,
+          language: language
+        })
+      })
+
+      if (response.ok) {
+        alert('File saved successfully!')
+      } else {
+        alert('Error saving file!')
+      }
+      setShowInput(false) // Hide input after save
+    }
+  }
+
   return (
     <div className="min-h-screen flex bg-base-100">
-      {/* Resizable Panel Group */}
       <PanelGroup direction="horizontal">
-        {/* Left Panel: Chat */}
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
             <div className="flex flex-col space-y-4 overflow-auto">
-              {/* Display chat messages (exclude code blocks) */}
               {messages.map((message, index) => (
                 <ChatMessage key={index} message={message} excludeCodeBlocks />
               ))}
 
-              {/* Display AI response (exclude code blocks) */}
               {response && (
                 <div className="card bg-base-300 shadow-lg p-4">
                   <ChatMessage message={response} excludeCodeBlocks />
@@ -75,7 +99,6 @@ const ChatApp: React.FC = () => {
               )}
             </div>
 
-            {/* Input area */}
             <div className="mt-4 flex space-x-4">
               <input
                 type="text"
@@ -91,12 +114,41 @@ const ChatApp: React.FC = () => {
                 Send
               </button>
             </div>
+
+            <button
+              onClick={handleGenerateFile}
+              className="btn btn-secondary mt-4"
+            >
+              Generate & Save File
+            </button>
+
+            {showInput && (
+              <div className="mt-4">
+                <input
+                  type="text"
+                  value={filePath}
+                  onChange={(e) => setFilePath(e.target.value)}
+                  placeholder="Enter file path"
+                  className="input input-bordered w-full"
+                />
+                <button
+                  onClick={() =>
+                    handleSaveFile(
+                      codeHistory[codeHistory.length - 1]?.code || '',
+                      'txt'
+                    )
+                  }
+                  className="btn btn-success mt-2"
+                >
+                  Save File
+                </button>
+              </div>
+            )}
           </div>
         </Panel>
 
         <PanelResizeHandle />
 
-        {/* Right Panel: Code Display */}
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
             <h2 className="text-lg font-bold">Generated Code</h2>
@@ -117,5 +169,3 @@ const ChatApp: React.FC = () => {
 }
 
 export default ChatApp
-
-
