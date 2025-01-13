@@ -1,16 +1,48 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import ChatMessage, { CodeBlock } from './ChatMessage'
 
 const ChatApp: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>([])
+  const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
+    []
+  )
   const [newMessage, setNewMessage] = useState<string>('')
-  const [response, setResponse] = useState<string | null>(null)
   const [codeHistory, setCodeHistory] = useState<
     { language: string; code: string }[]
   >([])
   const [filePath, setFilePath] = useState<string>('')
   const [showInput, setShowInput] = useState<boolean>(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Load conversation on page load
+    const loadConversation = async () => {
+      const savedId = localStorage.getItem('conversationId')
+      console.log('savedId: ', savedId)
+      if (savedId) {
+        try {
+          const res = await fetch(
+            'http://127.0.0.1:8000/chat/load-conversation/',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ conversation_id: savedId })
+            }
+          )
+
+          const data = await res.json()
+          if (data.status === 'success') {
+            setMessages(data.messages)
+            setConversationId(savedId)
+          }
+        } catch (error) {
+          console.error('Error loading conversation:', error)
+        }
+      }
+    }
+
+    loadConversation()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value)
@@ -18,27 +50,36 @@ const ChatApp: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
-      const updatedMessages = [...messages, newMessage]
+      const updatedMessages = [
+        ...messages,
+        { text: newMessage, sender: 'user' }
+      ]
       setMessages(updatedMessages)
       setNewMessage('')
 
       try {
         const res = await fetch('http://localhost:8000/chat/', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: updatedMessages
+            messages: updatedMessages.map((msg) => msg.text),
+            conversation_id: conversationId
           })
         })
 
         const data = await res.json()
-
         if (data.status === 'success') {
-          setResponse(data.ai_response)
+          setMessages(data.messages)
 
-          const codeMatch = data.ai_response.match(/```(\w*)\n([\s\S]*?)```/)
+          // Save the conversation ID if not already set
+          if (!conversationId) {
+            setConversationId(data.conversation_id)
+            localStorage.setItem('conversationId', data.conversation_id)
+          }
+
+          // Extract code blocks from AI response if present
+          const aiResponse = data.ai_response
+          const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
           if (codeMatch) {
             const [, language, code] = codeMatch
             setCodeHistory((prev) => [
@@ -46,11 +87,9 @@ const ChatApp: React.FC = () => {
               { language: language || 'plaintext', code }
             ])
           }
-        } else {
-          console.error('Error in backend response:', data.error)
         }
       } catch (error) {
-        console.error('Error sending message to backend:', error)
+        console.error('Error sending message:', error)
       }
     }
   }
@@ -61,24 +100,26 @@ const ChatApp: React.FC = () => {
 
   const handleSaveFile = async (code: string, language: string) => {
     if (filePath) {
-      const response = await fetch('http://localhost:8000/chat/save_file/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          file_path: filePath,
-          code: code,
-          language: language
+      try {
+        const response = await fetch('http://localhost:8000/chat/save_file/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_path: filePath,
+            code: code,
+            language: language
+          })
         })
-      })
 
-      if (response.ok) {
-        alert('File saved successfully!')
-      } else {
-        alert('Error saving file!')
+        if (response.ok) {
+          alert('File saved successfully!')
+        } else {
+          alert('Error saving file!')
+        }
+        setShowInput(false) // Hide input after save
+      } catch (error) {
+        console.error('Error saving file:', error)
       }
-      setShowInput(false) // Hide input after save
     }
   }
 
@@ -89,14 +130,12 @@ const ChatApp: React.FC = () => {
           <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
             <div className="flex flex-col space-y-4 overflow-auto">
               {messages.map((message, index) => (
-                <ChatMessage key={index} message={message} excludeCodeBlocks />
+                <ChatMessage
+                  key={index}
+                  message={message.text}
+                  excludeCodeBlocks={message.sender === 'llm'}
+                />
               ))}
-
-              {response && (
-                <div className="card bg-base-300 shadow-lg p-4">
-                  <ChatMessage message={response} excludeCodeBlocks />
-                </div>
-              )}
             </div>
 
             <div className="mt-4 flex space-x-4">
