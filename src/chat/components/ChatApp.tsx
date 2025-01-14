@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import ChatMessage, { CodeBlock } from './ChatMessage'
+import ChatMessage from './ChatMessage'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
@@ -15,10 +15,8 @@ const ChatApp: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   useEffect(() => {
-    // Load conversation on page load
     const loadConversation = async () => {
       const savedId = localStorage.getItem('conversationId')
-      console.log('savedId: ', savedId)
       if (savedId) {
         try {
           const res = await fetch(
@@ -29,7 +27,6 @@ const ChatApp: React.FC = () => {
               body: JSON.stringify({ conversation_id: savedId })
             }
           )
-
           const data = await res.json()
           if (data.status === 'success') {
             setMessages(data.messages)
@@ -48,58 +45,54 @@ const ChatApp: React.FC = () => {
     setNewMessage(e.target.value)
   }
 
- const handleSendMessage = async () => {
-   if (newMessage.trim()) {
-     const updatedMessages = [...messages, { text: newMessage, sender: 'user' }]
-     setMessages(updatedMessages)
-     setNewMessage('')
+  const handleSendMessage = async () => {
+    if (newMessage.trim()) {
+      const updatedMessages = [...messages, { text: newMessage, sender: 'user' }]
+      setMessages(updatedMessages)
+      setNewMessage('')
 
-     // Create the payload with file paths if entered
-     const filePaths = filePath
-       ? filePath.split(',').map((path) => path.trim())
-       : []
+      const filePaths = filePath
+        ? filePath.split(',').map((path) => path.trim())
+        : []
 
-     try {
-       const res = await fetch('http://localhost:8000/chat/', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           messages: updatedMessages.map((msg) => msg.text),
-           conversation_id: conversationId,
-           file_paths: filePaths // Send file paths with the message
-         })
-       })
+      try {
+        const res = await fetch('http://localhost:8000/chat/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: updatedMessages.map((msg) => msg.text),
+            conversation_id: conversationId,
+            file_paths: filePaths
+          })
+        })
 
-       const data = await res.json()
-       if (data.status === 'success') {
-         setMessages(data.messages)
+        const data = await res.json()
+        if (data.status === 'success') {
+          setMessages(data.messages)
 
-         // Save the conversation ID if not already set
-         if (!conversationId) {
-           setConversationId(data.conversation_id)
-           localStorage.setItem('conversationId', data.conversation_id)
-         }
+          if (!conversationId) {
+            setConversationId(data.conversation_id)
+            localStorage.setItem('conversationId', data.conversation_id)
+          }
 
-         // Extract code blocks from AI response if present
-         const aiResponse = data.ai_response
-         const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
-         if (codeMatch) {
-           const [, language, code] = codeMatch
-           setCodeHistory((prev) => [
-             ...prev,
-             { language: language || 'plaintext', code }
-           ])
-         }
-       }
-     } catch (error) {
-       console.error('Error sending message:', error)
-     }
-   }
- }
-
+          const aiResponse = data.ai_response
+          const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
+          if (codeMatch) {
+            const [, language, code] = codeMatch
+            setCodeHistory((prev) => [
+              ...prev,
+              { language: language || 'plaintext', code }
+            ])
+          }
+        }
+      } catch (error) {
+        console.error('Error sending message:', error)
+      }
+    }
+  }
 
   const handleGenerateFile = () => {
-    setShowInput(true) // Show input field to enter file path
+    setShowInput(true)
   }
 
   const handleSaveFile = async (code: string, language: string) => {
@@ -120,7 +113,7 @@ const ChatApp: React.FC = () => {
         } else {
           alert('Error saving file!')
         }
-        setShowInput(false) // Hide input after save
+        setShowInput(false)
       } catch (error) {
         console.error('Error saving file:', error)
       }
@@ -137,7 +130,7 @@ const ChatApp: React.FC = () => {
                 <ChatMessage
                   key={index}
                   message={message.text}
-                  excludeCodeBlocks={message.sender === 'llm'}
+                  sender={message.sender}
                 />
               ))}
             </div>
@@ -150,7 +143,6 @@ const ChatApp: React.FC = () => {
                 placeholder="Type a message"
                 className="input input-bordered w-full"
               />
-
               <button
                 onClick={handleSendMessage}
                 className="btn btn-primary px-6"
@@ -158,6 +150,7 @@ const ChatApp: React.FC = () => {
                 Send
               </button>
             </div>
+
             <div className="mt-4">
               <input
                 type="text"
@@ -206,9 +199,12 @@ const ChatApp: React.FC = () => {
             <h2 className="text-lg font-bold">Generated Code</h2>
             {codeHistory.length > 0 ? (
               codeHistory.map((item, index) => (
-                <CodeBlock key={index} language={item.language}>
-                  {item.code}
-                </CodeBlock>
+                <div key={index} className="mb-4">
+                  <h3 className="text-sm font-bold">{item.language}</h3>
+                  <pre className="bg-gray-800 p-4 rounded text-sm">
+                    <code>{item.code}</code>
+                  </pre>
+                </div>
               ))
             ) : (
               <p>No code generated yet.</p>

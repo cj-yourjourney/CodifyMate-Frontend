@@ -1,74 +1,71 @@
 import React from 'react'
-import Markdown from 'markdown-to-jsx'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
-import 'highlight.js/styles/monokai.css' // Change the theme here
-import hljs from 'highlight.js'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-// Inline CodeBlock definition
-export const CodeBlock: React.FC<{ language: string; children: string }> = ({
-  language,
-  children
-}) => {
-  // Apply syntax highlighting using highlight.js
-  const highlightedCode = hljs.highlightAuto(children).value
-
-  return (
-    <div className="relative p-4 bg-gray-900 text-white rounded-md overflow-auto">
-      <div className="absolute top-2 right-2">
-        <CopyToClipboard text={children}>
-          <button className="btn btn-xs bg-blue-600 text-white hover:bg-blue-500">
-            Copy
-          </button>
-        </CopyToClipboard>
-      </div>
-      <div className="flex justify-between mb-2">
-        <span className="text-xs bg-gray-700 text-white px-2 py-1 rounded-md">
-          {language || 'plaintext'}
-        </span>
-      </div>
-      {/* Highlighting the code with syntax highlighting */}
-      <pre className="whitespace-pre-wrap break-words text-left">
-        <code
-          className={`language-${language || 'plaintext'}`}
-          dangerouslySetInnerHTML={{ __html: highlightedCode }}
-        />
-      </pre>
-    </div>
-  )
-}
-
-type ChatMessageProps = {
+interface ChatMessageProps {
   message: string
-  excludeCodeBlocks?: boolean // Control whether to exclude code blocks
+  sender: 'user' | 'llm'
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({
-  message,
-  excludeCodeBlocks = false
-}) => {
-  const filteredMessage = excludeCodeBlocks
-    ? message.replace(/```[\s\S]*?```/g, '') // Remove code blocks if flag is set
-    : message
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
+  const handleCopy = (code: string) => {
+    navigator.clipboard.writeText(code)
+    alert('Code copied to clipboard!')
+  }
+
+  const isUser = sender === 'user'
 
   return (
-    <div className="card bg-base-200 shadow-lg mb-4 p-4 text-left">
-      <Markdown
-        options={{
-          overrides: {
-            code: {
-              component: ({ className, children }) => {
-                const language =
-                  className?.replace('language-', '') || 'plaintext'
-                return <CodeBlock language={language}>{children}</CodeBlock>
-              }
-            }
-          }
-        }}
+    <div
+      className={`mb-4 flex ${
+        isUser ? 'justify-end' : 'justify-start'
+      } items-start`}
+    >
+      <div
+        className={`p-4 rounded-lg ${
+          isUser
+            ? 'bg-blue-500 text-white max-w-xs'
+            : 'bg-gray-200 text-black w-full'
+        }`}
       >
-        {filteredMessage}
-      </Markdown>
+        <ReactMarkdown
+          components={{
+            code({ node, inline, className, children, ...props }) {
+              const match = /language-(\w+)/.exec(className || '')
+              return !inline && match ? (
+                <div className="relative group">
+                  <SyntaxHighlighter
+                    style={materialDark}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                  <button
+                    onClick={() =>
+                      handleCopy(String(children).replace(/\n$/, ''))
+                    }
+                    className="absolute top-2 right-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Copy
+                  </button>
+                </div>
+              ) : (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              )
+            }
+          }}
+        >
+          {message}
+        </ReactMarkdown>
+      </div>
     </div>
   )
 }
 
 export default ChatMessage
+
