@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import ChatMessage from './ChatMessage'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const ChatApp: React.FC = () => {
-  const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
-    []
-  )
+  const [messages, setMessages] = useState<
+    {
+      text: string
+      sender: string
+      codeButtons: { title: string; index: number }[]
+    }[]
+  >([])
   const [newMessage, setNewMessage] = useState<string>('')
   const [codeHistory, setCodeHistory] = useState<
-    { language: string; code: string }[]
+    { language: string; code: string; title: string }[]
   >([])
   const [filePath, setFilePath] = useState<string>('')
-  const [showInput, setShowInput] = useState<boolean>(false)
-  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [selectedCode, setSelectedCode] = useState<number | null>(null)
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -29,8 +34,9 @@ const ChatApp: React.FC = () => {
           )
           const data = await res.json()
           if (data.status === 'success') {
-            setMessages(data.messages)
-            setConversationId(savedId)
+            setMessages(
+              data.messages.map((msg: any) => ({ ...msg, codeButtons: [] }))
+            )
           }
         } catch (error) {
           console.error('Error loading conversation:', error)
@@ -47,13 +53,12 @@ const ChatApp: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
-      const updatedMessages = [...messages, { text: newMessage, sender: 'user' }]
+      const updatedMessages = [
+        ...messages,
+        { text: newMessage, sender: 'user', codeButtons: [] }
+      ]
       setMessages(updatedMessages)
       setNewMessage('')
-
-      const filePaths = filePath
-        ? filePath.split(',').map((path) => path.trim())
-        : []
 
       try {
         const res = await fetch('http://localhost:8000/chat/', {
@@ -61,29 +66,42 @@ const ChatApp: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: updatedMessages.map((msg) => msg.text),
-            conversation_id: conversationId,
-            file_paths: filePaths
+            file_paths: filePath
+              ? filePath.split(',').map((path) => path.trim())
+              : []
           })
         })
 
         const data = await res.json()
         if (data.status === 'success') {
-          setMessages(data.messages)
-
-          if (!conversationId) {
-            setConversationId(data.conversation_id)
-            localStorage.setItem('conversationId', data.conversation_id)
-          }
-
           const aiResponse = data.ai_response
-          const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
-          if (codeMatch) {
-            const [, language, code] = codeMatch
-            setCodeHistory((prev) => [
-              ...prev,
-              { language: language || 'plaintext', code }
-            ])
+          const codeMatches = aiResponse.match(/```(\w*)\n([\s\S]*?)```/g)
+
+          const codeButtons: { title: string; index: number }[] = []
+
+          let cleanedResponse = aiResponse
+
+          if (codeMatches) {
+            codeMatches.forEach((codeBlock, index) => {
+              const [, language, code] =
+                codeBlock.match(/```(\w*)\n([\s\S]*?)```/) || []
+              const isBigBlock = code.split('\n').length > 5
+              const title = `Code Block ${codeHistory.length + index + 1}`
+              if (isBigBlock) {
+                setCodeHistory((prev) => [
+                  ...prev,
+                  { language: language || 'plaintext', code, title }
+                ])
+                codeButtons.push({ title, index: codeHistory.length + index })
+                cleanedResponse = cleanedResponse.replace(codeBlock, '') // Remove the big code block
+              }
+            })
           }
+
+          setMessages((prev) => [
+            ...prev,
+            { text: cleanedResponse.trim(), sender: 'llm', codeButtons }
+          ])
         }
       } catch (error) {
         console.error('Error sending message:', error)
@@ -91,33 +109,8 @@ const ChatApp: React.FC = () => {
     }
   }
 
-  const handleGenerateFile = () => {
-    setShowInput(true)
-  }
-
-  const handleSaveFile = async (code: string, language: string) => {
-    if (filePath) {
-      try {
-        const response = await fetch('http://localhost:8000/chat/save_file/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_path: filePath,
-            code: code,
-            language: language
-          })
-        })
-
-        if (response.ok) {
-          alert('File saved successfully!')
-        } else {
-          alert('Error saving file!')
-        }
-        setShowInput(false)
-      } catch (error) {
-        console.error('Error saving file:', error)
-      }
-    }
+  const handleSelectCode = (index: number) => {
+    setSelectedCode(index)
   }
 
   return (
@@ -125,15 +118,15 @@ const ChatApp: React.FC = () => {
       <PanelGroup direction="horizontal">
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
-            <div className="flex flex-col space-y-4 overflow-auto">
-              {messages.map((message, index) => (
-                <ChatMessage
-                  key={index}
-                  message={message.text}
-                  sender={message.sender}
-                />
-              ))}
-            </div>
+            {messages.map((message, index) => (
+              <ChatMessage
+                key={index}
+                message={message.text}
+                sender={message.sender}
+                codeButtons={message.codeButtons}
+                onCodeButtonClick={handleSelectCode}
+              />
+            ))}
 
             <div className="mt-4 flex space-x-4">
               <input
@@ -160,35 +153,6 @@ const ChatApp: React.FC = () => {
                 className="input input-bordered w-full"
               />
             </div>
-            <button
-              onClick={handleGenerateFile}
-              className="btn btn-secondary mt-4"
-            >
-              Generate & Save File
-            </button>
-
-            {showInput && (
-              <div className="mt-4">
-                <input
-                  type="text"
-                  value={filePath}
-                  onChange={(e) => setFilePath(e.target.value)}
-                  placeholder="Enter file path"
-                  className="input input-bordered w-full"
-                />
-                <button
-                  onClick={() =>
-                    handleSaveFile(
-                      codeHistory[codeHistory.length - 1]?.code || '',
-                      'txt'
-                    )
-                  }
-                  className="btn btn-success mt-2"
-                >
-                  Save File
-                </button>
-              </div>
-            )}
           </div>
         </Panel>
 
@@ -197,17 +161,19 @@ const ChatApp: React.FC = () => {
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
             <h2 className="text-lg font-bold">Generated Code</h2>
-            {codeHistory.length > 0 ? (
-              codeHistory.map((item, index) => (
-                <div key={index} className="mb-4">
-                  <h3 className="text-sm font-bold">{item.language}</h3>
-                  <pre className="bg-gray-800 p-4 rounded text-sm">
-                    <code>{item.code}</code>
-                  </pre>
-                </div>
-              ))
-            ) : (
-              <p>No code generated yet.</p>
+
+            {selectedCode !== null && (
+              <div className="mt-4">
+                <h3 className="text-sm font-bold">
+                  {codeHistory[selectedCode].title}
+                </h3>
+                <SyntaxHighlighter
+                  style={materialDark}
+                  language={codeHistory[selectedCode].language}
+                >
+                  {codeHistory[selectedCode].code}
+                </SyntaxHighlighter>
+              </div>
             )}
           </div>
         </Panel>
