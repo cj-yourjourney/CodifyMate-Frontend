@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import ChatMessage from './ChatMessage'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -18,6 +18,8 @@ const ChatApp: React.FC = () => {
     localStorage.getItem('conversationId')
   )
   const [rightPanelContent, setRightPanelContent] = useState<string>('')
+
+  const rightPanelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -97,6 +99,16 @@ const ChatApp: React.FC = () => {
     language: string
   ) => {
     setRightPanelContent(code)
+
+    // Make the right panel stick by adding the fixed class
+    if (rightPanelRef.current) {
+      rightPanelRef.current.style.position = 'fixed'
+      rightPanelRef.current.style.top = '0'
+      rightPanelRef.current.style.right = '0'
+      rightPanelRef.current.style.width = '50%'
+      rightPanelRef.current.style.height = '100vh'
+      rightPanelRef.current.style.zIndex = '999'
+    }
   }
 
   return (
@@ -145,7 +157,10 @@ const ChatApp: React.FC = () => {
         <PanelResizeHandle />
 
         <Panel defaultSize={50}>
-          <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
+          <div
+            ref={rightPanelRef}
+            className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto"
+          >
             <h2 className="text-lg font-bold">Generated Code</h2>
             <SyntaxHighlighter style={materialDark} language="javascript">
               {rightPanelContent}
