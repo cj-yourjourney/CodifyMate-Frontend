@@ -18,6 +18,7 @@ const ChatApp: React.FC = () => {
     localStorage.getItem('conversationId')
   )
   const [rightPanelContent, setRightPanelContent] = useState<string>('')
+  const [rightPanelLanguage, setRightPanelLanguage] = useState<string>('')
 
   const rightPanelRef = useRef<HTMLDivElement | null>(null)
 
@@ -99,6 +100,7 @@ const ChatApp: React.FC = () => {
     language: string
   ) => {
     setRightPanelContent(code)
+    setRightPanelLanguage(language) // Set language for right panel
 
     // Make the right panel stick by adding the fixed class
     if (rightPanelRef.current) {
@@ -162,7 +164,11 @@ const ChatApp: React.FC = () => {
             className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto"
           >
             <h2 className="text-lg font-bold">Generated Code</h2>
-            <SyntaxHighlighter style={materialDark} language="javascript">
+            {/* Dynamically set the language for the right panel */}
+            <SyntaxHighlighter
+              style={materialDark}
+              language={rightPanelLanguage}
+            >
               {rightPanelContent}
             </SyntaxHighlighter>
           </div>
