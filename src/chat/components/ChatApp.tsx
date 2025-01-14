@@ -48,51 +48,55 @@ const ChatApp: React.FC = () => {
     setNewMessage(e.target.value)
   }
 
-  const handleSendMessage = async () => {
-    if (newMessage.trim()) {
-      const updatedMessages = [
-        ...messages,
-        { text: newMessage, sender: 'user' }
-      ]
-      setMessages(updatedMessages)
-      setNewMessage('')
+ const handleSendMessage = async () => {
+   if (newMessage.trim()) {
+     const updatedMessages = [...messages, { text: newMessage, sender: 'user' }]
+     setMessages(updatedMessages)
+     setNewMessage('')
 
-      try {
-        const res = await fetch('http://localhost:8000/chat/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: updatedMessages.map((msg) => msg.text),
-            conversation_id: conversationId
-          })
-        })
+     // Create the payload with file paths if entered
+     const filePaths = filePath
+       ? filePath.split(',').map((path) => path.trim())
+       : []
 
-        const data = await res.json()
-        if (data.status === 'success') {
-          setMessages(data.messages)
+     try {
+       const res = await fetch('http://localhost:8000/chat/', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           messages: updatedMessages.map((msg) => msg.text),
+           conversation_id: conversationId,
+           file_paths: filePaths // Send file paths with the message
+         })
+       })
 
-          // Save the conversation ID if not already set
-          if (!conversationId) {
-            setConversationId(data.conversation_id)
-            localStorage.setItem('conversationId', data.conversation_id)
-          }
+       const data = await res.json()
+       if (data.status === 'success') {
+         setMessages(data.messages)
 
-          // Extract code blocks from AI response if present
-          const aiResponse = data.ai_response
-          const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
-          if (codeMatch) {
-            const [, language, code] = codeMatch
-            setCodeHistory((prev) => [
-              ...prev,
-              { language: language || 'plaintext', code }
-            ])
-          }
-        }
-      } catch (error) {
-        console.error('Error sending message:', error)
-      }
-    }
-  }
+         // Save the conversation ID if not already set
+         if (!conversationId) {
+           setConversationId(data.conversation_id)
+           localStorage.setItem('conversationId', data.conversation_id)
+         }
+
+         // Extract code blocks from AI response if present
+         const aiResponse = data.ai_response
+         const codeMatch = aiResponse.match(/```(\w*)\n([\s\S]*?)```/)
+         if (codeMatch) {
+           const [, language, code] = codeMatch
+           setCodeHistory((prev) => [
+             ...prev,
+             { language: language || 'plaintext', code }
+           ])
+         }
+       }
+     } catch (error) {
+       console.error('Error sending message:', error)
+     }
+   }
+ }
+
 
   const handleGenerateFile = () => {
     setShowInput(true) // Show input field to enter file path
@@ -146,6 +150,7 @@ const ChatApp: React.FC = () => {
                 placeholder="Type a message"
                 className="input input-bordered w-full"
               />
+
               <button
                 onClick={handleSendMessage}
                 className="btn btn-primary px-6"
@@ -153,7 +158,15 @@ const ChatApp: React.FC = () => {
                 Send
               </button>
             </div>
-
+            <div className="mt-4">
+              <input
+                type="text"
+                value={filePath}
+                onChange={(e) => setFilePath(e.target.value)}
+                placeholder="Enter file paths (comma-separated)"
+                className="input input-bordered w-full"
+              />
+            </div>
             <button
               onClick={handleGenerateFile}
               className="btn btn-secondary mt-4"
