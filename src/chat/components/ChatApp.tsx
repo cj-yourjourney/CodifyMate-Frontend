@@ -18,18 +18,20 @@ const ChatApp: React.FC = () => {
   >([])
   const [filePath, setFilePath] = useState<string>('')
   const [selectedCode, setSelectedCode] = useState<number | null>(null)
+  const [conversationId, setConversationId] = useState<string | null>(
+    localStorage.getItem('conversationId')
+  )
 
   useEffect(() => {
     const loadConversation = async () => {
-      const savedId = localStorage.getItem('conversationId')
-      if (savedId) {
+      if (conversationId) {
         try {
           const res = await fetch(
             'http://127.0.0.1:8000/chat/load-conversation/',
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ conversation_id: savedId })
+              body: JSON.stringify({ conversation_id: conversationId })
             }
           )
           const data = await res.json()
@@ -45,7 +47,7 @@ const ChatApp: React.FC = () => {
     }
 
     loadConversation()
-  }, [])
+  }, [conversationId])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value)
@@ -68,7 +70,8 @@ const ChatApp: React.FC = () => {
             messages: updatedMessages.map((msg) => msg.text),
             file_paths: filePath
               ? filePath.split(',').map((path) => path.trim())
-              : []
+              : [],
+            conversation_id: conversationId
           })
         })
 
@@ -102,6 +105,12 @@ const ChatApp: React.FC = () => {
             ...prev,
             { text: cleanedResponse.trim(), sender: 'llm', codeButtons }
           ])
+
+          // Save conversation ID if not already saved
+          if (!conversationId) {
+            localStorage.setItem('conversationId', data.conversation_id)
+            setConversationId(data.conversation_id)
+          }
         }
       } catch (error) {
         console.error('Error sending message:', error)
