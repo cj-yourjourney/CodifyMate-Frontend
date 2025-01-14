@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
+// ChatApp.tsx
+import React, { useState, useEffect } from 'react'
 import ChatMessage from './ChatMessage'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -17,10 +15,6 @@ const ChatApp: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
-  const [rightPanelContent, setRightPanelContent] = useState<string>('')
-  const [rightPanelLanguage, setRightPanelLanguage] = useState<string>('')
-
-  const rightPanelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -94,86 +88,42 @@ const ChatApp: React.FC = () => {
     }
   }
 
-  const handleCodeButtonClick = (
-    index: number,
-    code: string,
-    language: string
-  ) => {
-    setRightPanelContent(code)
-    setRightPanelLanguage(language) // Set language for right panel
-
-    // Make the right panel stick by adding the fixed class
-    if (rightPanelRef.current) {
-      rightPanelRef.current.style.position = 'fixed'
-      rightPanelRef.current.style.top = '0'
-      rightPanelRef.current.style.right = '0'
-      rightPanelRef.current.style.width = '50%'
-      rightPanelRef.current.style.height = '100vh'
-      rightPanelRef.current.style.zIndex = '999'
-    }
-  }
-
   return (
     <div className="min-h-screen flex bg-base-100">
-      <PanelGroup direction="horizontal">
-        <Panel defaultSize={50}>
-          <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
-            {messages.map((message, index) => (
-              <ChatMessage
-                key={index}
-                message={message.text}
-                sender={message.sender}
-                codeButtons={message.codeButtons}
-                onCodeButtonClick={handleCodeButtonClick}
-              />
-            ))}
+      <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
+        {messages.map((message, index) => (
+          <ChatMessage
+            key={index}
+            message={message.text}
+            sender={message.sender}
+            codeButtons={message.codeButtons}
+            onCodeButtonClick={() => {}}
+          />
+        ))}
 
-            <div className="mt-4 flex space-x-4">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={handleInputChange}
-                placeholder="Type a message"
-                className="input input-bordered w-full"
-              />
-              <button
-                onClick={handleSendMessage}
-                className="btn btn-primary px-6"
-              >
-                Send
-              </button>
-            </div>
+        <div className="mt-4 flex space-x-4">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={handleInputChange}
+            placeholder="Type a message"
+            className="input input-bordered w-full"
+          />
+          <button onClick={handleSendMessage} className="btn btn-primary px-6">
+            Send
+          </button>
+        </div>
 
-            <div className="mt-4">
-              <input
-                type="text"
-                value={filePath}
-                onChange={(e) => setFilePath(e.target.value)}
-                placeholder="Enter file paths (comma-separated)"
-                className="input input-bordered w-full"
-              />
-            </div>
-          </div>
-        </Panel>
-
-        <PanelResizeHandle />
-
-        <Panel defaultSize={50}>
-          <div
-            ref={rightPanelRef}
-            className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto"
-          >
-            <h2 className="text-lg font-bold">Generated Code</h2>
-            {/* Dynamically set the language for the right panel */}
-            <SyntaxHighlighter
-              style={materialDark}
-              language={rightPanelLanguage}
-            >
-              {rightPanelContent}
-            </SyntaxHighlighter>
-          </div>
-        </Panel>
-      </PanelGroup>
+        <div className="mt-4">
+          <input
+            type="text"
+            value={filePath}
+            onChange={(e) => setFilePath(e.target.value)}
+            placeholder="Enter file paths (comma-separated)"
+            className="input input-bordered w-full"
+          />
+        </div>
+      </div>
     </div>
   )
 }

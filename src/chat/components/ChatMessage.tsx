@@ -1,5 +1,5 @@
 // ChatMessage.tsx
-import React from 'react'
+import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -8,22 +8,20 @@ import axios from 'axios'
 interface ChatMessageProps {
   message: string
   sender: 'user' | 'llm'
-  codeButtons: { title: string; index: number }[]
-  onCodeButtonClick: (index: number, code: string, language: string) => void
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({
-  message,
-  sender,
-  codeButtons,
-  onCodeButtonClick
-}) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
   const isUser = sender === 'user'
+
+  const [copyButtonText, setCopyButtonText] = useState<string>('Copy')
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(
-      () => alert('Code copied to clipboard!'),
-      (err) => console.error('Failed to copy text: ', err)
+      () => {
+        setCopyButtonText('Copied')
+        setTimeout(() => setCopyButtonText('Copy'), 2000) // Reset button text after 2 seconds
+      }
+      
     )
   }
 
@@ -83,21 +81,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       onClick={() => copyToClipboard(codeContent)}
                       className="px-2 py-1 bg-gray-700 text-white rounded text-sm hidden group-hover:block"
                     >
-                      Copy
+                      {copyButtonText}
                     </button>
                     <button
                       onClick={() => saveToFile(codeContent)}
                       className="px-2 py-1 bg-green-600 text-white rounded text-sm hidden group-hover:block"
                     >
                       Save File
-                    </button>
-                    <button
-                      onClick={() =>
-                        onCodeButtonClick(0, codeContent, match[1])
-                      }
-                      className="px-2 py-1 bg-blue-600 text-white rounded text-sm hidden group-hover:block"
-                    >
-                      Display at Right
                     </button>
                   </div>
                 </div>
