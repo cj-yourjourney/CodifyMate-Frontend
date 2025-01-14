@@ -1,7 +1,8 @@
-// ChatApp.tsx
 import React, { useState, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import ChatMessage from './ChatMessage'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -146,7 +147,9 @@ const ChatApp: React.FC = () => {
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
             <h2 className="text-lg font-bold">Generated Code</h2>
-            <pre>{rightPanelContent}</pre>
+            <SyntaxHighlighter style={materialDark} language="javascript">
+              {rightPanelContent}
+            </SyntaxHighlighter>
           </div>
         </Panel>
       </PanelGroup>
