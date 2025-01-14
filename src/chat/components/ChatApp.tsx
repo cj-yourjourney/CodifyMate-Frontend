@@ -17,10 +17,12 @@ const ChatApp: React.FC = () => {
     { language: string; code: string; title: string }[]
   >([])
   const [filePath, setFilePath] = useState<string>('')
-  const [selectedCode, setSelectedCode] = useState<number | null>(null)
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
+
+  
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -118,9 +120,11 @@ const ChatApp: React.FC = () => {
     }
   }
 
-  const handleSelectCode = (index: number) => {
-    setSelectedCode(index)
+  const handleSelectCode = (index: number, code: string, language: string) => {
+    setSelectedCode({ language, code })
   }
+
+  
 
   return (
     <div className="min-h-screen flex bg-base-100">
@@ -171,16 +175,14 @@ const ChatApp: React.FC = () => {
           <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
             <h2 className="text-lg font-bold">Generated Code</h2>
 
-            {selectedCode !== null && (
+            {selectedCode && (
               <div className="mt-4">
-                <h3 className="text-sm font-bold">
-                  {codeHistory[selectedCode].title}
-                </h3>
+                <h3 className="text-sm font-bold">{selectedCode.title}</h3>
                 <SyntaxHighlighter
                   style={materialDark}
-                  language={codeHistory[selectedCode].language}
+                  language={selectedCode.language}
                 >
-                  {codeHistory[selectedCode].code}
+                  {selectedCode.code}
                 </SyntaxHighlighter>
               </div>
             )}

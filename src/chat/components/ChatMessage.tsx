@@ -7,7 +7,7 @@ interface ChatMessageProps {
   message: string
   sender: 'user' | 'llm'
   codeButtons: { title: string; index: number }[]
-  onCodeButtonClick: (index: number) => void
+  onCodeButtonClick: (index: number, code: string, language: string) => void
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -43,7 +43,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {codeButtons.map((button, index) => (
               <button
                 key={index}
-                onClick={() => onCodeButtonClick(button.index)}
+                onClick={() =>
+                  onCodeButtonClick(
+                    button.index,
+                    codeButtons[button.index].code,
+                    codeButtons[button.index].language
+                  )
+                }
                 className="btn btn-secondary mb-2 mr-2"
               >
                 {button.title}
@@ -66,12 +72,26 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   >
                     {codeContent}
                   </SyntaxHighlighter>
-                  <button
-                    onClick={() => copyToClipboard(codeContent)}
-                    className="absolute top-2 right-2 px-2 py-1 bg-gray-700 text-white rounded text-sm hidden group-hover:block"
-                  >
-                    Copy
-                  </button>
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <button
+                      onClick={() => copyToClipboard(codeContent)}
+                      className="px-2 py-1 bg-gray-700 text-white rounded text-sm hidden group-hover:block"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      onClick={() =>
+                        onCodeButtonClick(
+                          -1,
+                          codeContent,
+                          match[1] || 'plaintext'
+                        )
+                      }
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-sm hidden group-hover:block"
+                    >
+                      Display at Right
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <code className={className} {...props}>
