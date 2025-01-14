@@ -18,6 +18,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isUser = sender === 'user'
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => alert('Code copied to clipboard!'),
+      (err) => console.error('Failed to copy text: ', err)
+    )
+  }
+
   return (
     <div
       className={`mb-4 flex ${
@@ -37,7 +44,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <button
                 key={index}
                 onClick={() => onCodeButtonClick(button.index)}
-                className="btn btn-secondary mb-2"
+                className="btn btn-secondary mb-2 mr-2"
               >
                 {button.title}
               </button>
@@ -48,15 +55,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           components={{
             code({ inline, className, children, ...props }) {
               const match = /language-(\w+)/.exec(className || '')
+              const codeContent = String(children).replace(/\n$/, '')
               return !inline && match ? (
-                <SyntaxHighlighter
-                  style={materialDark}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
+                <div className="relative group">
+                  <SyntaxHighlighter
+                    style={materialDark}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {codeContent}
+                  </SyntaxHighlighter>
+                  <button
+                    onClick={() => copyToClipboard(codeContent)}
+                    className="absolute top-2 right-2 px-2 py-1 bg-gray-700 text-white rounded text-sm hidden group-hover:block"
+                  >
+                    Copy
+                  </button>
+                </div>
               ) : (
                 <code className={className} {...props}>
                   {children}
