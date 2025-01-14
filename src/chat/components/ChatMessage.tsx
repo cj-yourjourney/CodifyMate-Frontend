@@ -1,7 +1,9 @@
+// ChatMessage.tsx
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import axios from 'axios'
 
 interface ChatMessageProps {
   message: string
@@ -25,6 +27,29 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     )
   }
 
+  const saveToFile = async (code: string) => {
+    const filePath = prompt('Enter the file path to save:')
+    if (filePath) {
+      try {
+        const response = await axios.post(
+          'http://127.0.0.1:8000/chat/save-file/',
+          {
+            file_path: filePath,
+            code
+          }
+        )
+        if (response.data.status === 'success') {
+          alert('File saved successfully!')
+        } else {
+          alert(`Error: ${response.data.message}`)
+        }
+      } catch (error) {
+        console.error('Error saving file:', error)
+        alert('An error occurred while saving the file.')
+      }
+    }
+  }
+
   return (
     <div
       className={`mb-4 flex ${
@@ -38,25 +63,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             : 'bg-gray-200 text-black w-full'
         }`}
       >
-        {!isUser && (
-          <div className="mb-2">
-            {codeButtons.map((button, index) => (
-              <button
-                key={index}
-                onClick={() =>
-                  onCodeButtonClick(
-                    button.index,
-                    codeButtons[button.index].code,
-                    codeButtons[button.index].language
-                  )
-                }
-                className="btn btn-secondary mb-2 mr-2"
-              >
-                {button.title}
-              </button>
-            ))}
-          </div>
-        )}
         <ReactMarkdown
           components={{
             code({ inline, className, children, ...props }) {
@@ -80,12 +86,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       Copy
                     </button>
                     <button
+                      onClick={() => saveToFile(codeContent)}
+                      className="px-2 py-1 bg-green-600 text-white rounded text-sm hidden group-hover:block"
+                    >
+                      Save File
+                    </button>
+                    <button
                       onClick={() =>
-                        onCodeButtonClick(
-                          -1,
-                          codeContent,
-                          match[1] || 'plaintext'
-                        )
+                        onCodeButtonClick(0, codeContent, match[1])
                       }
                       className="px-2 py-1 bg-blue-600 text-white rounded text-sm hidden group-hover:block"
                     >

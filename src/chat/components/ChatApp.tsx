@@ -1,8 +1,7 @@
+// ChatApp.tsx
 import React, { useState, useEffect } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import ChatMessage from './ChatMessage'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -13,16 +12,11 @@ const ChatApp: React.FC = () => {
     }[]
   >([])
   const [newMessage, setNewMessage] = useState<string>('')
-  const [codeHistory, setCodeHistory] = useState<
-    { language: string; code: string; title: string }[]
-  >([])
   const [filePath, setFilePath] = useState<string>('')
-  const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
-
-  
+  const [rightPanelContent, setRightPanelContent] = useState<string>('')
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -80,35 +74,11 @@ const ChatApp: React.FC = () => {
         const data = await res.json()
         if (data.status === 'success') {
           const aiResponse = data.ai_response
-          const codeMatches = aiResponse.match(/```(\w*)\n([\s\S]*?)```/g)
-
-          const codeButtons: { title: string; index: number }[] = []
-
-          let cleanedResponse = aiResponse
-
-          if (codeMatches) {
-            codeMatches.forEach((codeBlock, index) => {
-              const [, language, code] =
-                codeBlock.match(/```(\w*)\n([\s\S]*?)```/) || []
-              const isBigBlock = code.split('\n').length > 5
-              const title = `Code Block ${codeHistory.length + index + 1}`
-              if (isBigBlock) {
-                setCodeHistory((prev) => [
-                  ...prev,
-                  { language: language || 'plaintext', code, title }
-                ])
-                codeButtons.push({ title, index: codeHistory.length + index })
-                cleanedResponse = cleanedResponse.replace(codeBlock, '') // Remove the big code block
-              }
-            })
-          }
-
           setMessages((prev) => [
             ...prev,
-            { text: cleanedResponse.trim(), sender: 'llm', codeButtons }
+            { text: aiResponse.trim(), sender: 'llm', codeButtons: [] }
           ])
 
-          // Save conversation ID if not already saved
           if (!conversationId) {
             localStorage.setItem('conversationId', data.conversation_id)
             setConversationId(data.conversation_id)
@@ -120,11 +90,13 @@ const ChatApp: React.FC = () => {
     }
   }
 
-  const handleSelectCode = (index: number, code: string, language: string) => {
-    setSelectedCode({ language, code })
+  const handleCodeButtonClick = (
+    index: number,
+    code: string,
+    language: string
+  ) => {
+    setRightPanelContent(code)
   }
-
-  
 
   return (
     <div className="min-h-screen flex bg-base-100">
@@ -137,7 +109,7 @@ const ChatApp: React.FC = () => {
                 message={message.text}
                 sender={message.sender}
                 codeButtons={message.codeButtons}
-                onCodeButtonClick={handleSelectCode}
+                onCodeButtonClick={handleCodeButtonClick}
               />
             ))}
 
@@ -174,18 +146,7 @@ const ChatApp: React.FC = () => {
         <Panel defaultSize={50}>
           <div className="flex flex-col p-4 space-y-4 bg-gray-900 text-white overflow-auto h-full">
             <h2 className="text-lg font-bold">Generated Code</h2>
-
-            {selectedCode && (
-              <div className="mt-4">
-                <h3 className="text-sm font-bold">{selectedCode.title}</h3>
-                <SyntaxHighlighter
-                  style={materialDark}
-                  language={selectedCode.language}
-                >
-                  {selectedCode.code}
-                </SyntaxHighlighter>
-              </div>
-            )}
+            <pre>{rightPanelContent}</pre>
           </div>
         </Panel>
       </PanelGroup>
