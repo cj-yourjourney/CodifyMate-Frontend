@@ -1,16 +1,21 @@
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+
+
 import ChatApp from './chat/components/ChatApp'
-import './App.css'
+import TwoWayBinding from './playgound/TwoWayBinding'
+// import Sidebar from './chat/components/Sidebar'
 
-function App() {
-  
-
+const App: React.FC = () => {
   return (
-    <div> 
-      <ChatApp />
-    </div>
+    <Router>
+          <Routes>
+            <Route path="/" element={<ChatApp />} />
+            <Route path='playground' element={<TwoWayBinding />} />
+          </Routes>
+    
+    </Router>
   )
 }
 
 export default App
-
-

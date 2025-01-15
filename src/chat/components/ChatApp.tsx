@@ -77,6 +77,15 @@ const ChatApp: React.FC = () => {
       ]
       setMessages(updatedMessages)
       setNewMessage('')
+      setFilePath('')
+
+      // Reset the height of the textarea
+      const chatInput = document.getElementById(
+        'chatInput'
+      ) as HTMLTextAreaElement
+      if (chatInput) {
+        chatInput.style.height = 'auto' // Reset to default height
+      }
 
       try {
         const res = await fetch('http://127.0.0.1:8000/chat/', {
@@ -145,12 +154,25 @@ const ChatApp: React.FC = () => {
         ))}
 
         <div className="mt-4 flex space-x-4">
-          <input
-            type="text"
+          <textarea
             value={newMessage}
             onChange={handleInputChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault() // Prevent adding a new line
+                handleSendMessage()
+              }
+            }}
             placeholder="Type a message"
-            className="input input-bordered w-full"
+            className="textarea textarea-bordered w-full resize-none"
+            rows={1} // Minimum number of visible rows
+            style={{ overflow: 'hidden' }} // Prevent scrollbars
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement
+              target.style.height = 'auto' // Reset height
+              target.style.height = `${target.scrollHeight}px` // Adjust height to content
+            }}
+            id="chatInput" // Add an ID to target this element for resetting height
           />
           <button onClick={handleSendMessage} className="btn btn-primary px-6">
             Send
