@@ -1,6 +1,6 @@
-// ChatApp.tsx
 import React, { useState, useEffect } from 'react'
 import ChatMessage from './ChatMessage'
+import Sidebar from './Sidebar'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -43,6 +43,28 @@ const ChatApp: React.FC = () => {
     loadConversation()
   }, [conversationId])
 
+  const handleSelectConversation = async (id: string) => {
+    setConversationId(id)
+    localStorage.setItem('conversationId', id)
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/chat/load-conversation/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: id })
+      })
+
+      const data = await res.json()
+      if (data.status === 'success') {
+        setMessages(
+          data.messages.map((msg: any) => ({ ...msg, codeButtons: [] }))
+        )
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error)
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value)
   }
@@ -57,7 +79,7 @@ const ChatApp: React.FC = () => {
       setNewMessage('')
 
       try {
-        const res = await fetch('http://localhost:8000/chat/', {
+        const res = await fetch('http://127.0.0.1:8000/chat/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -88,9 +110,30 @@ const ChatApp: React.FC = () => {
     }
   }
 
+  const handleStartNewConversation = async () => {
+    try {
+      const res = await fetch(
+        'http://127.0.0.1:8000/chat/start-conversation/',
+        {
+          method: 'POST'
+        }
+      )
+      const data = await res.json()
+      if (data.status === 'success') {
+        setConversationId(data.conversation_id)
+        localStorage.setItem('conversationId', data.conversation_id)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('Error starting new conversation:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen flex bg-base-100">
-      <div className="flex flex-col p-4 space-y-4 overflow-auto h-full">
+      <Sidebar onSelectConversation={handleSelectConversation} />
+
+      <div className="flex flex-col p-4 space-y-4 overflow-auto h-full w-full">
         {messages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -123,6 +166,13 @@ const ChatApp: React.FC = () => {
             className="input input-bordered w-full"
           />
         </div>
+
+        <button
+          onClick={handleStartNewConversation}
+          className="btn btn-secondary mt-4"
+        >
+          Start New Conversation
+        </button>
       </div>
     </div>
   )
