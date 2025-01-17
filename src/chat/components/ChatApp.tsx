@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ChatMessage from './ChatMessage'
 import Sidebar from './Sidebar'
+import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -15,6 +16,11 @@ const ChatApp: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen)
+  }
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -31,7 +37,7 @@ const ChatApp: React.FC = () => {
           const data = await res.json()
           if (data.status === 'success') {
             setMessages(
-              data.messages.map((msg: any) => ({ ...msg, codeButtons: [] }))
+              data.messages.map((msg: { text: string; sender: string }) => ({ ...msg, codeButtons: [] }))
             )
           }
         } catch (error) {
@@ -57,7 +63,7 @@ const ChatApp: React.FC = () => {
       const data = await res.json()
       if (data.status === 'success') {
         setMessages(
-          data.messages.map((msg: any) => ({ ...msg, codeButtons: [] }))
+          data.messages.map((msg: { text: string; sender: string }) => ({ ...msg, codeButtons: [] }))
         )
       }
     } catch (error) {
@@ -177,7 +183,18 @@ const ChatApp: React.FC = () => {
           <button onClick={handleSendMessage} className="btn btn-primary px-6">
             Send
           </button>
+          <button onClick={toggleModal} className="btn btn-outline">
+            Show Structured Input
+          </button>
         </div>
+        {/* Structured Prompt Modal */}
+        {isModalOpen && (
+          <StructuredPromptModal
+            isOpen={isModalOpen}
+            onClose={toggleModal}
+            refinePromptEndpoint="http://127.0.0.1:8000/prompt/refine/"
+          />
+        )}
 
         <div className="mt-4">
           <input

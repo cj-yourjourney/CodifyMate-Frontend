@@ -23,7 +23,8 @@
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^7.1.1",
     "react-syntax-highlighter": "^15.6.1",
-    "rehype-highlight": "^7.0.1"
+    "rehype-highlight": "^7.0.1",
+    "remark-gfm": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
