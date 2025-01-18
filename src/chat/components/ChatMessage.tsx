@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { monokai } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
 import axios from 'axios'
 
 interface ChatMessageProps {
@@ -16,13 +18,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
   const [copyButtonText, setCopyButtonText] = useState<string>('Copy')
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        setCopyButtonText('Copied')
-        setTimeout(() => setCopyButtonText('Copy'), 2000) // Reset button text after 2 seconds
-      }
-      
-    )
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyButtonText('Copied')
+      setTimeout(() => setCopyButtonText('Copy'), 2000) // Reset button text after 2 seconds
+    })
   }
 
   const saveToFile = async (code: string) => {
@@ -56,18 +55,80 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
     >
       <div
         className={`p-4 rounded-lg ${
-          isUser
-            ? 'bg-blue-500 text-white max-w-xs'
-            : 'bg-gray-200 text-black w-full'
+          isUser ? 'bg-blue-500 text-white max-w-xs' : 'bg-gray-200 w-full'
         }`}
+        style={
+          !isUser
+            ? {
+                // fontSize: '1.1rem', // Adjust font size for LLM messages
+                // color: '#4b5563', // Adjust text color for LLM messages
+                // lineHeight: '1.6' // Adjust line height for readability
+              }
+            : undefined // No custom styling for user messages
+        }
       >
         <ReactMarkdown
           components={{
+            // Styling for headers (h1, h2, h3, etc.)
+            h1: ({ node, ...props }) => (
+              <h1
+                className="text-2xl font-bold text-gray-950 my-4"
+                {...props}
+              />
+            ),
+            h2: ({ node, ...props }) => (
+              <h2
+                className="text-3xl font-semibold text-gray-900 my-5"
+                {...props}
+              />
+            ),
+            h3: ({ node, ...props }) => (
+              <h3
+                className="text-3xl font-semibold text-gray-900 my-7"
+                {...props}
+              />
+            ),
+            p: ({ node, ...props }) => (
+              <p
+                className="text-xl text-gray-800 leading-loose my-5"
+                {...props}
+              />
+            ),
+            // Styling for ordered lists
+            ol: ({ node, ...props }) => (
+              <ol
+                className="list-decimal pl-5 text-xl space-y-2 my-5"
+                {...props}
+              />
+            ),
+            // Styling for unordered lists
+            ul: ({ node, ...props }) => (
+              <ul
+                className="list-disc pl-5 text-xl space-y-2 my-5"
+                {...props}
+              />
+            ),
+            // Styling for list items
+            li: ({ node, ...props }) => (
+              <li className="text-gray-700 text-xl my-5" {...props} />
+            ),
+            // Styling for blockquotes
+            blockquote: ({ node, ...props }) => (
+              <blockquote
+                className="border-l-4 pl-4 italic text-gray-950 my-4"
+                {...props}
+              />
+            ),
+            // Styling for links
+            a: ({ node, ...props }) => (
+              <a className="text-blue-600 hover:underline" {...props} />
+            ),
             code({ inline, className, children, ...props }) {
               const match = /language-(\w+)/.exec(className || '')
               const codeContent = String(children).replace(/\n$/, '')
+
               return !inline && match ? (
-                <div className="relative group">
+                <div className="relative group text-xl">
                   <SyntaxHighlighter
                     style={materialDark}
                     language={match[1]}
@@ -92,7 +153,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
                   </div>
                 </div>
               ) : (
-                <code className={className} {...props}>
+                // Inline code styling
+                <code
+                  className={`${className} bg-gray-100 text-green-600 px-2 py-1 rounded-sm text-lg`}
+                  {...props}
+                >
                   {children}
                 </code>
               )
