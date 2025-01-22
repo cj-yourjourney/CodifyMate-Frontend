@@ -72,45 +72,45 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
             // Styling for headers (h1, h2, h3, etc.)
             h1: ({ node, ...props }) => (
               <h1
-                className="text-2xl font-bold text-gray-950 my-4"
+                className="text-3xl font-bold text-gray-950 my-4"
                 {...props}
               />
             ),
             h2: ({ node, ...props }) => (
               <h2
-                className="text-3xl font-semibold text-gray-900 my-5"
+                className="text-2xl font-semibold text-gray-900 my-5"
                 {...props}
               />
             ),
             h3: ({ node, ...props }) => (
               <h3
-                className="text-3xl font-semibold text-gray-900 my-7"
+                className="text-xl font-semibold text-gray-900 my-7"
                 {...props}
               />
             ),
             p: ({ node, ...props }) => (
               <p
-                className="text-xl text-gray-800 leading-loose my-5"
+                className="text-lg text-gray-800 leading-loose my-5"
                 {...props}
               />
             ),
             // Styling for ordered lists
             ol: ({ node, ...props }) => (
               <ol
-                className="list-decimal pl-5 text-xl space-y-2 my-5"
+                className="list-decimal pl-5 text-lg space-y-2 my-5"
                 {...props}
               />
             ),
             // Styling for unordered lists
             ul: ({ node, ...props }) => (
               <ul
-                className="list-disc pl-5 text-xl space-y-2 my-5"
+                className="list-disc pl-5 text-lg space-y-2 my-5"
                 {...props}
               />
             ),
             // Styling for list items
             li: ({ node, ...props }) => (
-              <li className="text-gray-700 text-xl my-5" {...props} />
+              <li className="text-gray-700 text-lg my-5" {...props} />
             ),
             // Styling for blockquotes
             blockquote: ({ node, ...props }) => (
@@ -128,7 +128,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
               const codeContent = String(children).replace(/\n$/, '')
 
               return !inline && match ? (
-                <div className="relative group text-xl">
+                <div className="relative group text-lg">
                   <SyntaxHighlighter
                     style={materialDark}
                     language={match[1]}
