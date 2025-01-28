@@ -13,39 +13,46 @@ const StructuredPromptModal: React.FC<ModalProps> = ({
   onClose,
   refinePromptEndpoint
 }) => {
-  const [featureRequest, setFeatureRequest] = useState('')
-  const [objective, setObjective] = useState('')
-  const [userCase, setUserCase] = useState('')
-  const [relevantFiles, setRelevantFiles] = useState('')
+  const [purpose, setPurpose] = useState('')
+  const [functionality, setFunctionality] = useState('')
+  const [data, setData] = useState('')
+  const [design, setDesign] = useState('')
+  const [integration, setIntegration] = useState('')
   const [loading, setLoading] = useState(false)
   const [refinedPrompt, setRefinedPrompt] = useState<string | null>(null)
 
   const handleRefinePrompt = async () => {
-    if (!featureRequest || !objective || !userCase || !relevantFiles) {
-      alert('Please fill out all fields.')
+    if (!purpose || !functionality || !data) {
+      alert(
+        'Please fill out all required fields (Purpose, Functionality, Data).'
+      )
       return
     }
 
     setLoading(true)
     try {
+      const payload: any = {
+        purpose,
+        functionality,
+        data
+      }
+      // Include optional fields only if they are filled out
+      if (design) payload.design = design
+      if (integration) payload.integration = integration
+
       const response = await fetch(refinePromptEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          'feature request': featureRequest,
-          objective,
-          'user case': userCase,
-          'relevant files': relevantFiles
-        })
+        body: JSON.stringify(payload)
       })
 
-      const data = await response.json()
-      if (data.status === 'success') {
-        setRefinedPrompt(data.refined_prompt)
+      const responseData = await response.json()
+      if (responseData.status === 'success') {
+        setRefinedPrompt(responseData.refined_prompt)
       } else {
-        alert(data.error || 'Failed to refine the prompt.')
+        alert(responseData.error || 'Failed to refine the prompt.')
       }
     } catch (error) {
       alert('An error occurred while refining the prompt.')
@@ -61,45 +68,56 @@ const StructuredPromptModal: React.FC<ModalProps> = ({
 
         {/* Input Fields */}
         <div className="mb-4">
-          <label className="block font-medium mb-1">Feature Request</label>
-          <input
-            type="text"
-            className="input input-bordered w-full"
-            value={featureRequest}
-            onChange={(e) => setFeatureRequest(e.target.value)}
-            placeholder="Describe the feature request"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block font-medium mb-1">Objective</label>
+          <label className="block font-medium mb-1">Purpose</label>
           <textarea
             className="textarea textarea-bordered w-full"
-            value={objective}
-            onChange={(e) => setObjective(e.target.value)}
-            placeholder="State the objective"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="State the purpose of the feature, e.g., 'Build a React component for user profiles'"
             rows={3}
           />
         </div>
 
         <div className="mb-4">
-          <label className="block font-medium mb-1">User Case</label>
+          <label className="block font-medium mb-1">Functionality</label>
           <textarea
             className="textarea textarea-bordered w-full"
-            value={userCase}
-            onChange={(e) => setUserCase(e.target.value)}
-            placeholder="Describe the user case"
+            value={functionality}
+            onChange={(e) => setFunctionality(e.target.value)}
+            placeholder="Describe what the feature should do, e.g., 'Allow users to create, edit, and delete tasks'"
             rows={3}
           />
         </div>
 
         <div className="mb-4">
-          <label className="block font-medium mb-1">Relevant Files</label>
+          <label className="block font-medium mb-1">Data</label>
           <textarea
             className="textarea textarea-bordered w-full"
-            value={relevantFiles}
-            onChange={(e) => setRelevantFiles(e.target.value)}
-            placeholder="List relevant files"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            placeholder="Specify the data involved, e.g., 'Task details: title, description, due date, priority'"
+            rows={3}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-medium mb-1">Design</label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            value={design}
+            onChange={(e) => setDesign(e.target.value)}
+            placeholder="Describe the design requirements, e.g., 'A clean and minimal layout with drag-and-drop'"
+            rows={3}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-medium mb-1">Integration</label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            value={integration}
+            onChange={(e) => setIntegration(e.target.value)}
+            placeholder="List any integration needs, e.g., 'Sync with Google Calendar for deadlines'"
             rows={3}
           />
         </div>
@@ -109,10 +127,10 @@ const StructuredPromptModal: React.FC<ModalProps> = ({
           <div
             className="mt-4 p-4 border rounded-lg bg-gray-100 overflow-auto"
             style={{
-              backgroundColor: '#fffbea', // Light gray background (adjust as needed)
-              color: '#5a4b41', // Dark gray text color (adjust as needed)
-              fontSize: '1.1rem', // Slightly smaller font size for readability
-              lineHeight: '1.6' // Adjust line spacing
+              backgroundColor: '#fffbea',
+              color: '#5a4b41',
+              fontSize: '1.1rem',
+              lineHeight: '1.6'
             }}
           >
             <h4 className="font-semibold mb-2">Refined Prompt:</h4>

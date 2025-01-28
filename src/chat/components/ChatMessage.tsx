@@ -57,15 +57,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, sender }) => {
         className={`p-4 rounded-lg ${
           isUser ? 'bg-blue-500 text-white max-w-xs' : 'bg-gray-200 w-full'
         }`}
-        style={
-          !isUser
-            ? {
-                // fontSize: '1.1rem', // Adjust font size for LLM messages
-                // color: '#4b5563', // Adjust text color for LLM messages
-                // lineHeight: '1.6' // Adjust line height for readability
-              }
-            : undefined // No custom styling for user messages
-        }
+        // style={
+        //   !isUser
+        //     ? {
+        //         // fontSize: '1.1rem', // Adjust font size for LLM messages
+        //         // color: '#4b5563', // Adjust text color for LLM messages
+        //         // lineHeight: '1.6' // Adjust line height for readability
+        //       }
+        //     : undefined // No custom styling for user messages
+        // }
       >
         <ReactMarkdown
           components={{

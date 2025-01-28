@@ -32,9 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="btn btn-primary m-4"
+        className="btn btn-xs btn-outline btn-info"
       >
-        {isOpen ? 'Close Sidebar' : 'Open Sidebar'}
+        {isOpen ? 'Close Sidebar' : 'Sidebar'}
       </button>
 
       {isOpen && (
