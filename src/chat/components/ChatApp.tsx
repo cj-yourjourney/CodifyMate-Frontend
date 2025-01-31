@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import ChatMessage from './ChatMessage'
 import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
+import CheckCodeModal from '../../checkCode/CheckCodeModal'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -18,6 +19,7 @@ const ChatApp: React.FC = () => {
   )
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen)
   }
@@ -183,6 +185,13 @@ const ChatApp: React.FC = () => {
           <button onClick={handleSendMessage} className="btn btn-primary px-6">
             Send
           </button>
+          <button
+            onClick={() => setIsCheckCodeModalOpen(true)}
+            className="btn btn-outline"
+          >
+            Check Code
+          </button>
+
           <button onClick={toggleModal} className="btn btn-outline">
             Show Structured Input
           </button>
@@ -212,6 +221,10 @@ const ChatApp: React.FC = () => {
         >
           Start New Conversation
         </button>
+        <CheckCodeModal
+          isOpen={isCheckCodeModalOpen}
+          onClose={() => setIsCheckCodeModalOpen(false)}
+        />
       </div>
     </div>
   )
