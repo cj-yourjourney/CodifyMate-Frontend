@@ -17,6 +17,10 @@ const ChatApp: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
+  const [summary, setSummary] = useState<string | null>(null)
+  const [projectFolderPath, setProjectFolderPath] = useState<string | null>(
+    null
+  )
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
@@ -39,9 +43,15 @@ const ChatApp: React.FC = () => {
           const data = await res.json()
           if (data.status === 'success') {
             setMessages(
-              data.messages.map((msg: { text: string; sender: string }) => ({ ...msg, codeButtons: [] }))
+              data.messages.map((msg: { text: string; sender: string }) => ({
+                ...msg,
+                codeButtons: []
+              }))
             )
           }
+          // **CHANGED PART**: Ensure summary and project folder path are set
+          setSummary(data.summary) // Make sure this is being set
+          setProjectFolderPath(data.project_folder_path) // Make sure this is being set
         } catch (error) {
           console.error('Error loading conversation:', error)
         }
@@ -65,9 +75,15 @@ const ChatApp: React.FC = () => {
       const data = await res.json()
       if (data.status === 'success') {
         setMessages(
-          data.messages.map((msg: { text: string; sender: string }) => ({ ...msg, codeButtons: [] }))
+          data.messages.map((msg: { text: string; sender: string }) => ({
+            ...msg,
+            codeButtons: []
+          }))
         )
       }
+      // **CHANGED PART**: Set summary and project folder path on conversation load
+      setSummary(data.summary) // Ensure summary is set here as well
+      setProjectFolderPath(data.project_folder_path) // Ensure project folder path is set here
     } catch (error) {
       console.error('Error loading conversation:', error)
     }
@@ -145,6 +161,22 @@ const ChatApp: React.FC = () => {
       console.error('Error starting new conversation:', error)
     }
   }
+   const showSettings = () => {
+     return (
+       <div className="mt-4 p-4 border rounded-md bg-gray-100">
+         <h3 className="text-xl font-semibold">Conversation Settings</h3>
+         <p>
+           <strong>Summary:</strong> {summary || 'No summary available'}
+         </p>
+         <p>
+           <strong>Project Folder Path:</strong>{' '}
+           {projectFolderPath || 'No path available'}
+         </p>
+       </div>
+     )
+   }
+
+
 
   return (
     <div className="min-h-screen flex bg-base-100">
@@ -221,6 +253,21 @@ const ChatApp: React.FC = () => {
         >
           Start New Conversation
         </button>
+
+        {/* **CHANGED PART**: Render settings only if available */}
+        {summary && projectFolderPath && (
+          <div className="mt-4 p-4 border rounded-md bg-gray-100">
+            <h3 className="text-xl font-semibold">Conversation Settings</h3>
+            <p>
+              <strong>Summary:</strong> {summary || 'No summary available'}
+            </p>
+            <p>
+              <strong>Project Folder Path:</strong>{' '}
+              {projectFolderPath || 'No path available'}
+            </p>
+          </div>
+        )}
+        
         <CheckCodeModal
           isOpen={isCheckCodeModalOpen}
           onClose={() => setIsCheckCodeModalOpen(false)}
