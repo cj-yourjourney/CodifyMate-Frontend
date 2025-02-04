@@ -3,6 +3,7 @@ import ChatMessage from './ChatMessage'
 import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
 import CheckCodeModal from '../../checkCode/CheckCodeModal'
+import UserQuestionModal from './UserQuestionModal'
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -17,6 +18,10 @@ const ChatApp: React.FC = () => {
   const [conversationId, setConversationId] = useState<string | null>(
     localStorage.getItem('conversationId')
   )
+
+  const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] = useState(false) // ✅ NEW STATE
+  const [userQuestion, setUserQuestion] = useState('') // ✅ NEW STATE
+
   const [summary, setSummary] = useState<string | null>(null)
   const [projectFolderPath, setProjectFolderPath] = useState<string | null>(
     null
@@ -60,6 +65,8 @@ const ChatApp: React.FC = () => {
 
     loadConversation()
   }, [conversationId])
+  console.log('summary: ', summary)
+  console.log('path: ', projectFolderPath)
 
   const handleSelectConversation = async (id: string) => {
     setConversationId(id)
@@ -161,21 +168,45 @@ const ChatApp: React.FC = () => {
       console.error('Error starting new conversation:', error)
     }
   }
-   const showSettings = () => {
-     return (
-       <div className="mt-4 p-4 border rounded-md bg-gray-100">
-         <h3 className="text-xl font-semibold">Conversation Settings</h3>
-         <p>
-           <strong>Summary:</strong> {summary || 'No summary available'}
-         </p>
-         <p>
-           <strong>Project Folder Path:</strong>{' '}
-           {projectFolderPath || 'No path available'}
-         </p>
-       </div>
-     )
-   }
+  const showSettings = () => {
+    return (
+      <div className="mt-4 p-4 border rounded-md bg-gray-100">
+        <h3 className="text-xl font-semibold">Conversation Settings</h3>
+        <p>
+          <strong>Summary:</strong> {summary || 'No summary available'}
+        </p>
+        <p>
+          <strong>Project Folder Path:</strong>{' '}
+          {projectFolderPath || 'No path available'}
+        </p>
+      </div>
+    )
+  }
 
+  // ✅ Function to handle API call to analyze project
+  const handleAnalyzeProject = async (question: string): Promise<string> => {
+    if (!conversationId) return 'No active conversation. Start one first.'
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/chat/analyze-project/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_question: question
+        })
+      })
+
+      const data = await res.json()
+      console.log(data)
+      return data.status === 'success'
+        ? data.response
+        : `Error: ${data.message}`
+    } catch (error) {
+      console.error('Error analyzing project:', error)
+      return 'Error analyzing project.'
+    }
+  }
 
 
   return (
@@ -254,6 +285,25 @@ const ChatApp: React.FC = () => {
           Start New Conversation
         </button>
 
+        {/* ✅ Button to open the modal */}
+        <button
+          onClick={() => setIsUserQuestionModalOpen(true)}
+          className="btn btn-outline"
+        >
+          Analyze Project
+        </button>
+
+        {/* ✅ User Question Modal */}
+        {isUserQuestionModalOpen && (
+          <UserQuestionModal
+            isOpen={isUserQuestionModalOpen}
+            onClose={() => setIsUserQuestionModalOpen(false)}
+            onSubmit={async (question) => {
+              return await handleAnalyzeProject(question) // Return response to modal
+            }}
+          />
+        )}
+
         {/* **CHANGED PART**: Render settings only if available */}
         {summary && projectFolderPath && (
           <div className="mt-4 p-4 border rounded-md bg-gray-100">
@@ -267,7 +317,7 @@ const ChatApp: React.FC = () => {
             </p>
           </div>
         )}
-        
+
         <CheckCodeModal
           isOpen={isCheckCodeModalOpen}
           onClose={() => setIsCheckCodeModalOpen(false)}
