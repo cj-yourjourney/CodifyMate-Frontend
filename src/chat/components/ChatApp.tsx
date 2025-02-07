@@ -4,6 +4,8 @@ import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
 import CheckCodeModal from '../../checkCode/CheckCodeModal'
 import UserQuestionModal from './UserQuestionModal'
+import RelevantFilePathModal from '../../prompts/components/RelevantFilePathModal'
+
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -21,6 +23,10 @@ const ChatApp: React.FC = () => {
 
   const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] = useState(false) // ✅ NEW STATE
   const [userQuestion, setUserQuestion] = useState('') // ✅ NEW STATE
+
+  // NEW STATE: Manage the Relevant File Path modal open/close state
+  const [isRelevantFilePathModalOpen, setIsRelevantFilePathModalOpen] =
+    useState(false)
 
   const [summary, setSummary] = useState<string | null>(null)
   const [projectFolderPath, setProjectFolderPath] = useState<string | null>(
@@ -208,7 +214,6 @@ const ChatApp: React.FC = () => {
     }
   }
 
-
   return (
     <div className="min-h-screen flex bg-base-100">
       <Sidebar onSelectConversation={handleSelectConversation} />
@@ -322,6 +327,23 @@ const ChatApp: React.FC = () => {
           isOpen={isCheckCodeModalOpen}
           onClose={() => setIsCheckCodeModalOpen(false)}
         />
+
+        {/* NEW: Button to open the Relevant File Path Modal */}
+        <button
+          onClick={() => setIsRelevantFilePathModalOpen(true)}
+          className="btn btn-outline"
+        >
+          Relevant File Path
+        </button>
+
+        {/* NEW: Render the Relevant File Path Modal */}
+        {isRelevantFilePathModalOpen && (
+          <RelevantFilePathModal
+            isOpen={isRelevantFilePathModalOpen}
+            onClose={() => setIsRelevantFilePathModalOpen(false)}
+            conversationId={conversationId}
+          />
+        )}
       </div>
     </div>
   )
