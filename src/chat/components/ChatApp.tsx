@@ -34,10 +34,12 @@ const ChatApp: React.FC = () => {
   )
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen)
   }
+
+  const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
+
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -269,7 +271,6 @@ const ChatApp: React.FC = () => {
           <StructuredPromptModal
             isOpen={isModalOpen}
             onClose={toggleModal}
-            refinePromptEndpoint="http://127.0.0.1:8000/prompt/refine/"
           />
         )}
 
