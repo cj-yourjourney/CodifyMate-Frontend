@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-
+import MarkdownRenderer from '../shared/MarkdownRenderer'
 
 type RelevantFilePathModalProps = {
   isOpen: boolean
@@ -92,23 +90,10 @@ const RelevantFilePathModal: React.FC<RelevantFilePathModalProps> = ({
 
           {/* ----------------- Updated Markdown Rendering Section ----------------- */}
           {responseMessage && (
-            <div
-              className="mt-4 p-4 border rounded-lg overflow-auto"
-              style={{
-                backgroundColor: '#fffbea',
-                color: '#5a4b41',
-                fontSize: '1.1rem',
-                lineHeight: '1.6',
-                maxHeight: '300px' // Optional: limits the height and makes the area scrollable if needed
-              }}
-            >
+            <>
               <h4 className="font-semibold mb-2">LLM Response:</h4>
-              <ReactMarkdown
-                className="prose prose-sm max-w-none"
-                children={responseMessage}
-                remarkPlugins={[remarkGfm]}
-              />
-            </div>
+              <MarkdownRenderer content={responseMessage} />
+            </>
           )}
 
           <div className="modal-action">
