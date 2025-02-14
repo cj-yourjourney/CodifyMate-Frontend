@@ -231,47 +231,80 @@ const ChatApp: React.FC = () => {
           />
         ))}
 
-        <div className="mt-4 flex space-x-4">
+        <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
+          {/* Input Field */}
           <textarea
             value={newMessage}
             onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault() // Prevent adding a new line
+                e.preventDefault()
                 handleSendMessage()
               }
             }}
             placeholder="Type a message"
-            className="textarea textarea-bordered w-full resize-none"
-            rows={1} // Minimum number of visible rows
-            style={{ overflow: 'hidden' }} // Prevent scrollbars
+            className="textarea w-full resize-none pb-12 bg-base-200 border-none focus:ring-0 focus:outline-none"
+            rows={2}
+            style={{ overflow: 'hidden' }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement
-              target.style.height = 'auto' // Reset height
-              target.style.height = `${target.scrollHeight}px` // Adjust height to content
+              target.style.height = 'auto'
+              target.style.height = `${target.scrollHeight}px`
             }}
-            id="chatInput" // Add an ID to target this element for resetting height
+            id="chatInput"
           />
-          <button onClick={handleSendMessage} className="btn btn-primary px-6">
-            Send
-          </button>
-          <button
-            onClick={() => setIsCheckCodeModalOpen(true)}
-            className="btn btn-outline"
-          >
-            Check Code
-          </button>
 
-          <button onClick={toggleModal} className="btn btn-outline">
-            Show Structured Input
-          </button>
+          {/* Button Container - Shares Background */}
+          <div className="flex justify-between mt-2">
+            {/* Left-side Buttons */}
+            <div className="flex space-x-2">
+              <button
+                onClick={toggleModal}
+                className="btn btn-outline rounded-lg"
+              >
+                Template
+              </button>
+              <button
+                onClick={() => setIsRelevantFilePathModalOpen(true)}
+                className="btn btn-outline rounded-lg"
+              >
+                Paths
+              </button>
+            </div>
+
+            {/* Right-side Buttons */}
+            <div className="flex space-x-2">
+              <button
+                onClick={handleSendMessage}
+                className="btn btn-primary rounded-lg"
+              >
+                Send
+              </button>
+              <button
+                onClick={() => setIsCheckCodeModalOpen(true)}
+                className="btn btn-outline rounded-lg"
+              >
+                Check
+              </button>
+              <button
+                onClick={() => setIsUserQuestionModalOpen(true)}
+                className="btn btn-outline rounded-lg"
+              >
+                Analyze
+              </button>
+              <button
+                onClick={handleStartNewConversation}
+                className="btn btn-outline rounded-lg"
+              >
+                New Chat
+              </button>
+            </div>
+          </div>
         </div>
+
         {/* Structured Prompt Modal */}
         {isModalOpen && (
-          <StructuredPromptModal
-            isOpen={isModalOpen}
-            onClose={toggleModal}
-          />
+          <StructuredPromptModal isOpen={isModalOpen} onClose={toggleModal} />
         )}
 
         <div className="mt-4">
@@ -283,21 +316,6 @@ const ChatApp: React.FC = () => {
             className="input input-bordered w-full"
           />
         </div>
-
-        <button
-          onClick={handleStartNewConversation}
-          className="btn btn-secondary mt-4"
-        >
-          Start New Conversation
-        </button>
-
-        {/* ✅ Button to open the modal */}
-        <button
-          onClick={() => setIsUserQuestionModalOpen(true)}
-          className="btn btn-outline"
-        >
-          Analyze Project
-        </button>
 
         {/* ✅ User Question Modal */}
         {isUserQuestionModalOpen && (
@@ -328,14 +346,6 @@ const ChatApp: React.FC = () => {
           isOpen={isCheckCodeModalOpen}
           onClose={() => setIsCheckCodeModalOpen(false)}
         />
-
-        {/* NEW: Button to open the Relevant File Path Modal */}
-        <button
-          onClick={() => setIsRelevantFilePathModalOpen(true)}
-          className="btn btn-outline"
-        >
-          Relevant File Path
-        </button>
 
         {/* NEW: Render the Relevant File Path Modal */}
         {isRelevantFilePathModalOpen && (
