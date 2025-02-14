@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, {
+  useState,
+  useEffect,
+  useDeferredValue,
+  useCallback,
+  memo
+} from 'react'
 import ChatMessage from './ChatMessage'
 import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
@@ -6,6 +12,33 @@ import CheckCodeModal from '../../checkCode/CheckCodeModal'
 import UserQuestionModal from './UserQuestionModal'
 import RelevantFilePathModal from '../../prompts/components/RelevantFilePathModal'
 
+// Memoized component to render the list of chat messages.
+// It only re-renders when the messages prop actually changes.
+const ChatMessagesList = memo(
+  ({
+    messages
+  }: {
+    messages: {
+      text: string
+      sender: string
+      codeButtons: { title: string; index: number }[]
+    }[]
+  }) => {
+    return (
+      <>
+        {messages.map((message, index) => (
+          <ChatMessage
+            key={index}
+            message={message.text}
+            sender={message.sender}
+            codeButtons={message.codeButtons}
+            onCodeButtonClick={() => {}}
+          />
+        ))}
+      </>
+    )
+  }
+)
 
 const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -21,10 +54,9 @@ const ChatApp: React.FC = () => {
     localStorage.getItem('conversationId')
   )
 
-  const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] = useState(false) // ✅ NEW STATE
-  const [userQuestion, setUserQuestion] = useState('') // ✅ NEW STATE
+  const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] = useState(false)
+  const [userQuestion, setUserQuestion] = useState('')
 
-  // NEW STATE: Manage the Relevant File Path modal open/close state
   const [isRelevantFilePathModalOpen, setIsRelevantFilePathModalOpen] =
     useState(false)
 
@@ -40,6 +72,10 @@ const ChatApp: React.FC = () => {
 
   const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
 
+  // Use React's useDeferredValue to defer updating the messages list.
+  // This means that while the user types a new message, the heavy messages list
+  // (which may have 30+ messages) isn’t updated immediately, eliminating the lag.
+  const deferredMessages = useDeferredValue(messages)
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -62,9 +98,8 @@ const ChatApp: React.FC = () => {
               }))
             )
           }
-          // **CHANGED PART**: Ensure summary and project folder path are set
-          setSummary(data.summary) // Make sure this is being set
-          setProjectFolderPath(data.project_folder_path) // Make sure this is being set
+          setSummary(data.summary)
+          setProjectFolderPath(data.project_folder_path)
         } catch (error) {
           console.error('Error loading conversation:', error)
         }
@@ -96,17 +131,20 @@ const ChatApp: React.FC = () => {
           }))
         )
       }
-      // **CHANGED PART**: Set summary and project folder path on conversation load
-      setSummary(data.summary) // Ensure summary is set here as well
-      setProjectFolderPath(data.project_folder_path) // Ensure project folder path is set here
+      setSummary(data.summary)
+      setProjectFolderPath(data.project_folder_path)
     } catch (error) {
       console.error('Error loading conversation:', error)
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value)
-  }
+  // useCallback to memoize the input change handler (optional optimization)
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setNewMessage(e.target.value)
+    },
+    []
+  )
 
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
@@ -123,7 +161,7 @@ const ChatApp: React.FC = () => {
         'chatInput'
       ) as HTMLTextAreaElement
       if (chatInput) {
-        chatInput.style.height = 'auto' // Reset to default height
+        chatInput.style.height = 'auto'
       }
 
       try {
@@ -176,6 +214,7 @@ const ChatApp: React.FC = () => {
       console.error('Error starting new conversation:', error)
     }
   }
+
   const showSettings = () => {
     return (
       <div className="mt-4 p-4 border rounded-md bg-gray-100">
@@ -191,7 +230,7 @@ const ChatApp: React.FC = () => {
     )
   }
 
-  // ✅ Function to handle API call to analyze project
+  // Function to handle API call to analyze project
   const handleAnalyzeProject = async (question: string): Promise<string> => {
     if (!conversationId) return 'No active conversation. Start one first.'
 
@@ -221,15 +260,8 @@ const ChatApp: React.FC = () => {
       <Sidebar onSelectConversation={handleSelectConversation} />
 
       <div className="flex flex-col p-4 space-y-4 overflow-auto h-full w-full">
-        {messages.map((message, index) => (
-          <ChatMessage
-            key={index}
-            message={message.text}
-            sender={message.sender}
-            codeButtons={message.codeButtons}
-            onCodeButtonClick={() => {}}
-          />
-        ))}
+        {/* Render memoized & deferred messages list */}
+        <ChatMessagesList messages={deferredMessages} />
 
         <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
           {/* Input Field */}
@@ -254,7 +286,7 @@ const ChatApp: React.FC = () => {
             id="chatInput"
           />
 
-          {/* Button Container - Shares Background */}
+          {/* Button Container */}
           <div className="flex justify-between mt-2">
             {/* Left-side Buttons */}
             <div className="flex space-x-2">
@@ -317,18 +349,18 @@ const ChatApp: React.FC = () => {
           />
         </div>
 
-        {/* ✅ User Question Modal */}
+        {/* User Question Modal */}
         {isUserQuestionModalOpen && (
           <UserQuestionModal
             isOpen={isUserQuestionModalOpen}
             onClose={() => setIsUserQuestionModalOpen(false)}
             onSubmit={async (question) => {
-              return await handleAnalyzeProject(question) // Return response to modal
+              return await handleAnalyzeProject(question)
             }}
           />
         )}
 
-        {/* **CHANGED PART**: Render settings only if available */}
+        {/* Render settings only if available */}
         {summary && projectFolderPath && (
           <div className="mt-4 p-4 border rounded-md bg-gray-100">
             <h3 className="text-xl font-semibold">Conversation Settings</h3>
@@ -347,7 +379,7 @@ const ChatApp: React.FC = () => {
           onClose={() => setIsCheckCodeModalOpen(false)}
         />
 
-        {/* NEW: Render the Relevant File Path Modal */}
+        {/* Relevant File Path Modal */}
         {isRelevantFilePathModalOpen && (
           <RelevantFilePathModal
             isOpen={isRelevantFilePathModalOpen}
