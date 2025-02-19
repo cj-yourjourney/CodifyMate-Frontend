@@ -1,7 +1,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { PromptRootState, PromptAppDispatch } from '../redux/promptStore'
-import { setPromptField, refinePrompt } from '../redux/slices/promptSlice'
+import { PromptRootState, PromptAppDispatch } from '../state/promptStore'
+import { setPromptField, refinePrompt } from '../state/slices/promptSlice'
 import MarkdownRenderer from '../shared/MarkdownRenderer'
 
 interface ModalProps {

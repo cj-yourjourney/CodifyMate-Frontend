@@ -1,10 +1,10 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { PromptRootState, PromptAppDispatch } from '../redux/promptStore'
+import { PromptRootState, PromptAppDispatch } from '../state/promptStore'
 import {
   setFeatureRequest,
   fetchRelevantFilePaths
-} from '../redux/slices/relevantFilePathSlice'
+} from '../state/slices/relevantFilePathSlice'
 import MarkdownRenderer from '../shared/MarkdownRenderer'
 
 interface ModalProps {

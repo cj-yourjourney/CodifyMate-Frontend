@@ -1,5 +1,5 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
-import { promptReducers } from '../../prompts/redux/promptStore'
+import { promptReducers } from '../../prompts/state/promptStore'
 
 // Combine all reducers, including those from prompts
 const rootReducer = combineReducers({
