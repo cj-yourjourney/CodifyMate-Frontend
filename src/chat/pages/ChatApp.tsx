@@ -17,7 +17,7 @@ import {
 } from '../state/slices/chatSlice'
 import ChatMessagesList from '../components/ChatMessagesList'
 
-
+import TemplatePanel from '../../templates/components/TemplatePanel'
 
 const ChatApp: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -110,10 +110,8 @@ const ChatApp: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-base-100">
-      {/* <Sidebar /> */}
-
-      <div className="flex flex-col p-4 space-y-4 overflow-auto h-full w-full">
-        {/* Use extracted ChatMessagesList component */}
+      {/* Main Chat Area - 70% */}
+      <div className="w-full md:w-[70%] flex flex-col p-4 space-y-4 overflow-auto h-full">
         <ChatMessagesList messages={deferredMessages} />
 
         <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
@@ -225,6 +223,11 @@ const ChatApp: React.FC = () => {
             conversationId={conversationId || ''} // conversationId from chat slice
           />
         )}
+      </div>
+
+      {/* Template Panel - 30% */}
+      <div className="hidden md:block md:w-[30%] border-l">
+        <TemplatePanel />
       </div>
     </div>
   )
