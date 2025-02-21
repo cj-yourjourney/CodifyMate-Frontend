@@ -2,12 +2,13 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { promptReducers } from '../../prompts/state/promptStore'
 import chatReducer from '../../chat/state/slices/chatSlice'
+import templateReducer from '../../templates/state/slices/templateSlice'
 
 // Combine all reducers, including chat
 const rootReducer = combineReducers({
   ...promptReducers,
-  chat: chatReducer
-  // codeCheck: checkCodeReducer,
+  chat: chatReducer,
+  template: templateReducer 
 })
 
 const rootStore = configureStore({
