@@ -1,14 +1,18 @@
+// Sidebar.tsx
 import React, { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 
-interface SidebarProps {
-  onSelectConversation: (conversationId: string) => void
-}
+import {
+  setConversationId,
+  loadConversation
+} from '../../../chat/state/slices/chatSlice'
 
-const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
+const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [conversations, setConversations] = useState<
     { conversationId: string; title: string }[]
   >([])
+  const dispatch = useDispatch()
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -29,7 +33,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
   }, [])
 
   const handleConversationClick = (conversationId: string) => {
-    onSelectConversation(conversationId) // Notify ChatApp of the selected conversation
+    // Dispatch Redux actions directly when a conversation is clicked.
+    dispatch(setConversationId(conversationId))
+    dispatch(loadConversation(conversationId))
   }
 
   return (

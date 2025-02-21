@@ -1,12 +1,10 @@
 // chat/components/ChatApp.tsx
-import React, { useEffect, useDeferredValue, useCallback, memo } from 'react'
+import React, { useEffect, useDeferredValue, useCallback} from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../shared/redux/rootStore'
-import ChatMessage from './ChatMessage'
-import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
 import CheckCodeModal from '../../checkCode/CheckCodeModal'
-import UserQuestionModal from './UserQuestionModal'
+import UserQuestionModal from '../components/UserQuestionModal'
 import RelevantFilePathModal from '../../prompts/components/RelevantFilePathModal'
 import {
   setNewMessage,
@@ -17,32 +15,9 @@ import {
   startNewConversationAsync,
   analyzeProjectAsync
 } from '../state/slices/chatSlice'
+import ChatMessagesList from '../components/ChatMessagesList'
 
-const ChatMessagesList = memo(
-  ({
-    messages
-  }: {
-    messages: {
-      text: string
-      sender: string
-      codeButtons: { title: string; index: number }[]
-    }[]
-  }) => {
-    return (
-      <>
-        {messages.map((message, index) => (
-          <ChatMessage
-            key={index}
-            message={message.text}
-            sender={message.sender}
-            codeButtons={message.codeButtons}
-            onCodeButtonClick={() => {}}
-          />
-        ))}
-      </>
-    )
-  }
-)
+
 
 const ChatApp: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -135,10 +110,10 @@ const ChatApp: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-base-100">
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <div className="flex flex-col p-4 space-y-4 overflow-auto h-full w-full">
-        {/* Render memoized & deferred messages list */}
+        {/* Use extracted ChatMessagesList component */}
         <ChatMessagesList messages={deferredMessages} />
 
         <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
