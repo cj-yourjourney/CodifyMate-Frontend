@@ -104,6 +104,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
         h3: ({ node, ...props }: any) => (
           <h3 className="text-xl font-semibold text-gray-900 my-7" {...props} />
         ),
+        h4: ({ node, ...props }: any) => (
+          <h4 className="text-xl font-semibold text-gray-900 my-7" {...props} />
+        ),
         p: ({ node, ...props }: any) => (
           <p className="text-lg text-gray-800 leading-loose my-5" {...props} />
         ),

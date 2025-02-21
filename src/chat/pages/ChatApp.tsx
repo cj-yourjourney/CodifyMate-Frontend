@@ -127,7 +127,7 @@ const ChatApp: React.FC = () => {
               }
             }}
             placeholder="Type a message"
-            className="textarea w-full resize-none pb-12 bg-base-200 border-none focus:ring-0 focus:outline-none"
+            className="textarea w-full resize-none pb-12 bg-base-200 text-lg placeholder:text-lg border-none focus:ring-0 focus:outline-none"
             rows={2}
             style={{ overflow: 'hidden' }}
             onInput={(e) => {
@@ -228,9 +228,7 @@ const ChatApp: React.FC = () => {
       </div>
 
       {/* Template Panel - 30% */}
-      <div
-        className="hidden sm:block md:w-[30%] border-l bg-gray-200 w-full overflow-y-auto h-screen" // <-- Changed: added "overflow-y-auto h-screen"
-      >
+      <div className="hidden sm:block md:w-[30%] border-l bg-gray-200 w-full overflow-y-auto h-screen">
         <TemplatePanel />
       </div>
     </div>
