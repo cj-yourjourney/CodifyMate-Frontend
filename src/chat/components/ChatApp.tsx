@@ -1,19 +1,23 @@
-import React, {
-  useState,
-  useEffect,
-  useDeferredValue,
-  useCallback,
-  memo
-} from 'react'
+// chat/components/ChatApp.tsx
+import React, { useEffect, useDeferredValue, useCallback, memo } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '../../shared/redux/rootStore'
 import ChatMessage from './ChatMessage'
 import Sidebar from './Sidebar'
 import StructuredPromptModal from '../../prompts/components/StructuredPromptModal'
 import CheckCodeModal from '../../checkCode/CheckCodeModal'
 import UserQuestionModal from './UserQuestionModal'
 import RelevantFilePathModal from '../../prompts/components/RelevantFilePathModal'
+import {
+  setNewMessage,
+  setFilePath,
+  addUserMessage,
+  loadConversation,
+  sendMessageAsync,
+  startNewConversationAsync,
+  analyzeProjectAsync
+} from '../state/slices/chatSlice'
 
-// Memoized component to render the list of chat messages.
-// It only re-renders when the messages prop actually changes.
 const ChatMessagesList = memo(
   ({
     messages
@@ -41,122 +45,42 @@ const ChatMessagesList = memo(
 )
 
 const ChatApp: React.FC = () => {
-  const [messages, setMessages] = useState<
-    {
-      text: string
-      sender: string
-      codeButtons: { title: string; index: number }[]
-    }[]
-  >([])
-  const [newMessage, setNewMessage] = useState<string>('')
-  const [filePath, setFilePath] = useState<string>('')
-  const [conversationId, setConversationId] = useState<string | null>(
-    localStorage.getItem('conversationId')
-  )
-
-  const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] = useState(false)
-  const [userQuestion, setUserQuestion] = useState('')
-
-  const [isRelevantFilePathModalOpen, setIsRelevantFilePathModalOpen] =
-    useState(false)
-
-  const [summary, setSummary] = useState<string | null>(null)
-  const [projectFolderPath, setProjectFolderPath] = useState<string | null>(
-    null
-  )
-
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen)
-  }
-
-  const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = useState(false)
-
-  // Use React's useDeferredValue to defer updating the messages list.
-  // This means that while the user types a new message, the heavy messages list
-  // (which may have 30+ messages) isn’t updated immediately, eliminating the lag.
+  const dispatch = useDispatch<AppDispatch>()
+  const {
+    messages,
+    newMessage,
+    filePath,
+    conversationId,
+    summary,
+    projectFolderPath,
+    loading,
+    error
+  } = useSelector((state: RootState) => state.chat)
   const deferredMessages = useDeferredValue(messages)
 
+  // Load conversation on mount if conversationId exists
   useEffect(() => {
-    const loadConversation = async () => {
-      if (conversationId) {
-        try {
-          const res = await fetch(
-            'http://127.0.0.1:8000/chat/load-conversation/',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ conversation_id: conversationId })
-            }
-          )
-          const data = await res.json()
-          if (data.status === 'success') {
-            setMessages(
-              data.messages.map((msg: { text: string; sender: string }) => ({
-                ...msg,
-                codeButtons: []
-              }))
-            )
-          }
-          setSummary(data.summary)
-          setProjectFolderPath(data.project_folder_path)
-        } catch (error) {
-          console.error('Error loading conversation:', error)
-        }
-      }
+    if (conversationId) {
+      dispatch(loadConversation(conversationId))
     }
+  }, [conversationId, dispatch])
 
-    loadConversation()
-  }, [conversationId])
-  console.log('summary: ', summary)
-  console.log('path: ', projectFolderPath)
-
-  const handleSelectConversation = async (id: string) => {
-    setConversationId(id)
-    localStorage.setItem('conversationId', id)
-
-    try {
-      const res = await fetch('http://127.0.0.1:8000/chat/load-conversation/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: id })
-      })
-
-      const data = await res.json()
-      if (data.status === 'success') {
-        setMessages(
-          data.messages.map((msg: { text: string; sender: string }) => ({
-            ...msg,
-            codeButtons: []
-          }))
-        )
-      }
-      setSummary(data.summary)
-      setProjectFolderPath(data.project_folder_path)
-    } catch (error) {
-      console.error('Error loading conversation:', error)
-    }
-  }
-
-  // useCallback to memoize the input change handler (optional optimization)
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setNewMessage(e.target.value)
+      dispatch(setNewMessage(e.target.value))
     },
-    []
+    [dispatch]
   )
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (newMessage.trim()) {
-      const updatedMessages = [
-        ...messages,
-        { text: newMessage, sender: 'user', codeButtons: [] }
-      ]
-      setMessages(updatedMessages)
-      setNewMessage('')
-      setFilePath('')
+      // Add the user's message to the state
+      dispatch(addUserMessage(newMessage))
+      // Clear input and filePath
+      dispatch(setNewMessage(''))
+      dispatch(setFilePath(''))
 
-      // Reset the height of the textarea
+      // Reset the textarea height if needed
       const chatInput = document.getElementById(
         'chatInput'
       ) as HTMLTextAreaElement
@@ -164,107 +88,60 @@ const ChatApp: React.FC = () => {
         chatInput.style.height = 'auto'
       }
 
-      try {
-        const res = await fetch('http://127.0.0.1:8000/chat/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: updatedMessages.map((msg) => msg.text),
-            file_paths: filePath
-              ? filePath.split(',').map((path) => path.trim())
-              : [],
-            conversation_id: conversationId
-          })
+      // Collect current messages text and dispatch send message thunk
+      const allMessages = [...messages.map((msg) => msg.text), newMessage]
+      dispatch(
+        sendMessageAsync({
+          conversationId,
+          messages: allMessages,
+          filePath
         })
-
-        const data = await res.json()
-        if (data.status === 'success') {
-          const aiResponse = data.ai_response
-          setMessages((prev) => [
-            ...prev,
-            { text: aiResponse.trim(), sender: 'llm', codeButtons: [] }
-          ])
-
-          if (!conversationId) {
-            localStorage.setItem('conversationId', data.conversation_id)
-            setConversationId(data.conversation_id)
-          }
-        }
-      } catch (error) {
-        console.error('Error sending message:', error)
-      }
-    }
-  }
-
-  const handleStartNewConversation = async () => {
-    try {
-      const res = await fetch(
-        'http://127.0.0.1:8000/chat/start-conversation/',
-        {
-          method: 'POST'
-        }
       )
-      const data = await res.json()
-      if (data.status === 'success') {
-        setConversationId(data.conversation_id)
-        localStorage.setItem('conversationId', data.conversation_id)
-        setMessages([])
-      }
-    } catch (error) {
-      console.error('Error starting new conversation:', error)
     }
   }
 
-  const showSettings = () => {
-    return (
-      <div className="mt-4 p-4 border rounded-md bg-gray-100">
-        <h3 className="text-xl font-semibold">Conversation Settings</h3>
-        <p>
-          <strong>Summary:</strong> {summary || 'No summary available'}
-        </p>
-        <p>
-          <strong>Project Folder Path:</strong>{' '}
-          {projectFolderPath || 'No path available'}
-        </p>
-      </div>
-    )
+  const handleStartNewConversation = () => {
+    dispatch(startNewConversationAsync())
   }
 
-  // Function to handle API call to analyze project
   const handleAnalyzeProject = async (question: string): Promise<string> => {
     if (!conversationId) return 'No active conversation. Start one first.'
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/chat/analyze-project/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          user_question: question
-        })
-      })
-
-      const data = await res.json()
-      console.log(data)
-      return data.status === 'success'
-        ? data.response
-        : `Error: ${data.message}`
+      const resultAction = await dispatch(
+        analyzeProjectAsync({ conversationId, userQuestion: question })
+      )
+      if (analyzeProjectAsync.fulfilled.match(resultAction)) {
+        return resultAction.payload as string
+      } else {
+        return `Error: ${resultAction.payload}`
+      }
     } catch (error) {
-      console.error('Error analyzing project:', error)
       return 'Error analyzing project.'
     }
   }
 
+  // Local state for modal visibility (can be kept local)
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [isCheckCodeModalOpen, setIsCheckCodeModalOpen] = React.useState(false)
+  const [isUserQuestionModalOpen, setIsUserQuestionModalOpen] =
+    React.useState(false)
+  const [isRelevantFilePathModalOpen, setIsRelevantFilePathModalOpen] =
+    React.useState(false)
+
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen)
+  }
+
   return (
     <div className="min-h-screen flex bg-base-100">
-      <Sidebar onSelectConversation={handleSelectConversation} />
+      <Sidebar />
 
       <div className="flex flex-col p-4 space-y-4 overflow-auto h-full w-full">
         {/* Render memoized & deferred messages list */}
         <ChatMessagesList messages={deferredMessages} />
 
         <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
-          {/* Input Field */}
           <textarea
             value={newMessage}
             onChange={handleInputChange}
@@ -286,9 +163,7 @@ const ChatApp: React.FC = () => {
             id="chatInput"
           />
 
-          {/* Button Container */}
           <div className="flex justify-between mt-2">
-            {/* Left-side Buttons */}
             <div className="flex space-x-2">
               <button
                 onClick={toggleModal}
@@ -304,7 +179,6 @@ const ChatApp: React.FC = () => {
               </button>
             </div>
 
-            {/* Right-side Buttons */}
             <div className="flex space-x-2">
               <button
                 onClick={handleSendMessage}
@@ -334,33 +208,7 @@ const ChatApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Structured Prompt Modal */}
-        {isModalOpen && (
-          <StructuredPromptModal isOpen={isModalOpen} onClose={toggleModal} />
-        )}
-
-        <div className="mt-4">
-          <input
-            type="text"
-            value={filePath}
-            onChange={(e) => setFilePath(e.target.value)}
-            placeholder="Enter file paths (comma-separated)"
-            className="input input-bordered w-full"
-          />
-        </div>
-
-        {/* User Question Modal */}
-        {isUserQuestionModalOpen && (
-          <UserQuestionModal
-            isOpen={isUserQuestionModalOpen}
-            onClose={() => setIsUserQuestionModalOpen(false)}
-            onSubmit={async (question) => {
-              return await handleAnalyzeProject(question)
-            }}
-          />
-        )}
-
-        {/* Render settings only if available */}
+        {/* Conversation Settings */}
         {summary && projectFolderPath && (
           <div className="mt-4 p-4 border rounded-md bg-gray-100">
             <h3 className="text-xl font-semibold">Conversation Settings</h3>
@@ -374,17 +222,32 @@ const ChatApp: React.FC = () => {
           </div>
         )}
 
+        {/* Display global loading/error states */}
+        {loading && (
+          <span className="loading loading-dots loading-sm">Loading...</span>
+        )}
+        {error && <p className="text-red-600 font-semibold">{error}</p>}
+
         <CheckCodeModal
           isOpen={isCheckCodeModalOpen}
           onClose={() => setIsCheckCodeModalOpen(false)}
         />
 
-        {/* Relevant File Path Modal */}
+        {isModalOpen && (
+          <StructuredPromptModal isOpen={isModalOpen} onClose={toggleModal} />
+        )}
+
+        <UserQuestionModal
+          isOpen={isUserQuestionModalOpen}
+          onClose={() => setIsUserQuestionModalOpen(false)}
+          onSubmit={handleAnalyzeProject}
+        />
+
         {isRelevantFilePathModalOpen && (
           <RelevantFilePathModal
             isOpen={isRelevantFilePathModalOpen}
             onClose={() => setIsRelevantFilePathModalOpen(false)}
-            conversationId={conversationId}
+            conversationId={conversationId || ''} // conversationId from chat slice
           />
         )}
       </div>

@@ -25,9 +25,11 @@ export const fetchRelevantFilePaths = createAsyncThunkUtil(
     conversationId: string
   }) => ({
     url: 'http://127.0.0.1:8000/prompt/get-file-paths/',
+    method: 'POST', // explicitly set the method
     body: { feature_request: featureRequest, conversation_id: conversationId }
   })
 )
+
 
 const relevantFilePathSlice = createSliceUtil(
   'relevantFilePath',
