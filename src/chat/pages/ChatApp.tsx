@@ -111,7 +111,9 @@ const ChatApp: React.FC = () => {
   return (
     <div className="min-h-screen flex bg-base-100">
       {/* Main Chat Area - 70% */}
-      <div className="w-full md:w-[70%] flex flex-col p-4 space-y-4 overflow-auto h-full">
+      <div
+        className="w-full md:w-[70%] flex flex-col p-4 space-y-4 overflow-y-auto h-screen" // <-- Changed: added "overflow-y-auto h-screen"
+      >
         <ChatMessagesList messages={deferredMessages} />
 
         <div className="bg-base-200 p-4 rounded-lg shadow-md flex flex-col">
@@ -138,12 +140,12 @@ const ChatApp: React.FC = () => {
 
           <div className="flex justify-between mt-2">
             <div className="flex space-x-2">
-              <button
+              {/* <button
                 onClick={toggleModal}
                 className="btn btn-outline rounded-lg"
               >
                 Template
-              </button>
+              </button> */}
               <button
                 onClick={() => setIsRelevantFilePathModalOpen(true)}
                 className="btn btn-outline rounded-lg"
@@ -226,7 +228,9 @@ const ChatApp: React.FC = () => {
       </div>
 
       {/* Template Panel - 30% */}
-      <div className="hidden md:block md:w-[30%] border-l">
+      <div
+        className="hidden sm:block md:w-[30%] border-l bg-gray-200 w-full overflow-y-auto h-screen" // <-- Changed: added "overflow-y-auto h-screen"
+      >
         <TemplatePanel />
       </div>
     </div>
