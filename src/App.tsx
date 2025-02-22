@@ -4,7 +4,7 @@ import { Provider } from 'react-redux'
 import rootStore from './shared/redux/rootStore'
 import ChatApp from './chat/pages/ChatApp'
 import TwoWayBinding from './playgound/TwoWayBinding'
-import { Sidebar } from './shared/components/Sidebar'
+import { Sidebar } from './sidebar'
 
 const App: React.FC = () => {
   return (

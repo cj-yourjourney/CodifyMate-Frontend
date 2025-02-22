@@ -173,12 +173,12 @@ const ChatApp: React.FC = () => {
               >
                 Analyze
               </button>
-              <button
+              {/* <button
                 onClick={handleStartNewConversation}
                 className="btn btn-outline rounded-lg"
               >
                 New Chat
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

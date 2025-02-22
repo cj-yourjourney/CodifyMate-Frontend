@@ -1,14 +1,18 @@
+// Sidebar.tsx
 import React, { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import {
+  setConversationId,
+  loadConversation,
+  startNewConversationAsync
+} from '../chat/state/slices/chatSlice'
 
-interface SidebarProps {
-  onSelectConversation: (conversationId: string) => void
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
+const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [conversations, setConversations] = useState<
     { conversationId: string; title: string }[]
   >([])
+  const dispatch = useDispatch()
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -28,14 +32,28 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
     fetchConversations()
   }, [])
 
+  const handleConversationClick = (conversationId: string) => {
+    dispatch(setConversationId(conversationId))
+    dispatch(loadConversation(conversationId))
+    setIsOpen(false) // Close sidebar when conversation is clicked
+  }
+
+  const handleNewChat = () => {
+    dispatch(startNewConversationAsync())
+    setIsOpen(false) // Close sidebar after starting a new chat
+  }
+
   return (
     <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="btn btn-xs btn-outline btn-info"
-      >
-        {isOpen ? 'Close Sidebar' : 'Sidebar'}
-      </button>
+      {/* When sidebar is closed, show a button to open it */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="btn btn-xs btn-outline btn-info"
+        >
+          Sidebar
+        </button>
+      )}
 
       {isOpen && (
         <div className="absolute left-0 top-0 h-screen bg-base-200 w-64 shadow-md z-50">
@@ -45,10 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
               {conversations.map((conv) => (
                 <li key={conv.conversationId}>
                   <button
-                    onClick={() => {
-                      onSelectConversation(conv.conversationId)
-                      setIsOpen(false)
-                    }}
+                    onClick={() => handleConversationClick(conv.conversationId)}
                     className="w-full text-left btn btn-sm btn-outline"
                   >
                     {conv.title ||
@@ -57,6 +72,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectConversation }) => {
                 </li>
               ))}
             </ul>
+            {/* New Chat button */}
+            <button
+              onClick={handleNewChat}
+              className="w-full text-left btn btn-sm btn-primary mt-4"
+            >
+              New Chat
+            </button>
+            {/* Close Sidebar button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-full text-left btn btn-sm btn-outline mt-2"
+            >
+              Close Sidebar
+            </button>
           </div>
         </div>
       )}
